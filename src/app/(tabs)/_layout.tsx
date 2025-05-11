@@ -1,30 +1,42 @@
 import { Feather } from "@expo/vector-icons";
 import { Tabs } from "expo-router";
+import { SafeAreaView } from "react-native-safe-area-context";
 
 export default function TabsLayout() {
     return (
-        <Tabs>
-            <Tabs.Screen
-                name="index"
-                options={{
-                    title: "Home",
-                    tabBarIcon: ({ color }) => (
-                        <Feather name="home" size={24} color={color} />
-                    ),
-                }}
-            />
-            <Tabs.Screen
-                name="booking"
-                options={{
-                    title: "Booking",
-                }}
-            />
-            <Tabs.Screen
-                name="booked"
-                options={{
-                    title: "Booked",
-                }}
-            />
-        </Tabs>
+        <SafeAreaView className="flex-1 bg-background" edges={["top"]}>
+            <Tabs>
+                <Tabs.Screen
+                    name="index"
+                    options={{
+                        title: "Home",
+                        headerShown: false,
+                        tabBarIcon: ({ color }) => (
+                            <Feather name="home" size={24} color={color} />
+                        ),
+                    }}
+                />
+                <Tabs.Screen
+                    name="booking"
+                    options={{
+                        title: "Booking",
+                        headerShown: false,
+                    }}
+                />
+                <Tabs.Screen
+                    name="booked"
+                    options={{
+                        title: "Booked",
+                        headerShown: false,
+                    }}
+                />
+                <Tabs.Screen
+                    name="[classId]"
+                    options={{
+                        headerShown: false,
+                    }}
+                />
+            </Tabs>
+        </SafeAreaView>
     );
 }
