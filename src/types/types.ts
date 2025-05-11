@@ -7,6 +7,32 @@ export type ReservationStatus =
 
 export type PaymentStatus = "unpaid" | "paid" | "refunded";
 
+export type DifficultyLevel = "beginner" | "intermediate" | "advanced";
+
+export const DIFFICULTY_LEVELS: DifficultyLevel[] = [
+    "beginner",
+    "intermediate",
+    "advanced",
+];
+
+export const DIFFICULTY_DISPLAY_NAMES: Record<DifficultyLevel, string> = {
+    beginner: "입문",
+    intermediate: "중급",
+    advanced: "고급",
+};
+
+export type LocationType = "indoor" | "outdoor";
+
+export const LOCATION_TYPE = {
+    INDOOR: "indoor",
+    OUTDOOR: "outdoor",
+} as const;
+
+export const LOCATION_DISPLAY_NAMES: Record<LocationType, string> = {
+    indoor: "실내",
+    outdoor: "실외",
+};
+
 export interface Instructor {
     id: string;
     name: string;
@@ -36,8 +62,10 @@ export interface YogaClass {
     location: Location | null;
     description: string | null;
     instructorId: string | null;
-    cover_image_url: string;
+    image_urls: string[];
     tagIds: string[];
+    difficulty: DifficultyLevel;
+    isIndoor: LocationType;
     createdAt: Date;
     updatedAt: Date;
 }

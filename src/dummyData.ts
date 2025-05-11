@@ -1,5 +1,7 @@
 import {
+    DIFFICULTY_LEVELS,
     Instructor,
+    LOCATION_TYPE,
     PaymentStatus,
     Reservation,
     ReservationStatus,
@@ -55,13 +57,13 @@ export const dummyInstructors: Instructor[] = [
 export const dummyTags: YogaClassTag[] = [
     {
         id: "tag_001",
-        name: "초급",
+        name: "근력",
         createdAt: new Date("2024-01-01"),
         updatedAt: new Date("2024-01-01"),
     },
     {
         id: "tag_002",
-        name: "중급",
+        name: "유연성",
         createdAt: new Date("2024-01-01"),
         updatedAt: new Date("2024-01-01"),
     },
@@ -98,8 +100,14 @@ export const dummyYogaClasses: YogaClass[] = [
         description:
             "하루를 시작하는 상쾌한 아침 요가 수업입니다. 하루를 시작하는 상쾌한 아침 요가 수업입니다. 하루를 시작하는 상쾌한 아침 요가 수업입니다. 하루를 시작하는 상쾌한 아침 요가 수업입니다.",
         instructorId: "inst_001",
-        cover_image_url: "https://example.com/morning-yoga.jpg",
-        tagIds: ["tag_001", "tag_003", "tag_004"], // 초급, 힐링, 아쉬탕가
+        image_urls: [
+            "https://images.unsplash.com/photo-1506126613408-eca07ce68773",
+            "https://images.unsplash.com/photo-1545389336-cf090694435e",
+            "https://images.unsplash.com/photo-1544367567-0f2fcb009e0b",
+        ],
+        tagIds: ["tag_001", "tag_003", "tag_004"],
+        difficulty: DIFFICULTY_LEVELS[0],
+        isIndoor: LOCATION_TYPE.INDOOR,
         createdAt: new Date("2024-01-01"),
         updatedAt: new Date("2024-01-01"),
     },
@@ -114,8 +122,14 @@ export const dummyYogaClasses: YogaClass[] = [
         },
         description: "활력 넘치는 동적 요가 수업입니다.",
         instructorId: "inst_002",
-        cover_image_url: "https://example.com/power-vinyasa.jpg",
-        tagIds: ["tag_002"], // 중급
+        image_urls: [
+            "https://images.unsplash.com/photo-1506126613408-eca07ce68773",
+            "https://images.unsplash.com/photo-1545389336-cf090694435e",
+            "https://images.unsplash.com/photo-1544367567-0f2fcb009e0b",
+        ],
+        tagIds: ["tag_002"],
+        difficulty: DIFFICULTY_LEVELS[1],
+        isIndoor: LOCATION_TYPE.INDOOR,
         createdAt: new Date("2024-01-02"),
         updatedAt: new Date("2024-01-02"),
     },
@@ -130,8 +144,14 @@ export const dummyYogaClasses: YogaClass[] = [
         },
         description: "음악과 함께하는 편안한 요가 수업입니다.",
         instructorId: "inst_003",
-        cover_image_url: "https://example.com/healing-yoga.jpg",
-        tagIds: ["tag_003"], // 힐링
+        image_urls: [
+            "https://images.unsplash.com/photo-1506126613408-eca07ce68773",
+            "https://images.unsplash.com/photo-1545389336-cf090694435e",
+            "https://images.unsplash.com/photo-1544367567-0f2fcb009e0b",
+        ],
+        tagIds: ["tag_003"],
+        difficulty: DIFFICULTY_LEVELS[0],
+        isIndoor: LOCATION_TYPE.INDOOR,
         createdAt: new Date("2024-01-03"),
         updatedAt: new Date("2024-01-03"),
     },
@@ -146,8 +166,14 @@ export const dummyYogaClasses: YogaClass[] = [
         },
         description: "아쉬탕가 요가의 기본을 배우는 수업입니다.",
         instructorId: "inst_004",
-        cover_image_url: "https://example.com/ashtanga-basic.jpg",
-        tagIds: ["tag_004"], // 아쉬탕가
+        image_urls: [
+            "https://images.unsplash.com/photo-1506126613408-eca07ce68773",
+            "https://images.unsplash.com/photo-1545389336-cf090694435e",
+            "https://images.unsplash.com/photo-1544367567-0f2fcb009e0b",
+        ],
+        tagIds: ["tag_004"],
+        difficulty: DIFFICULTY_LEVELS[1],
+        isIndoor: LOCATION_TYPE.INDOOR,
         createdAt: new Date("2024-01-04"),
         updatedAt: new Date("2024-01-04"),
     },
@@ -162,8 +188,14 @@ export const dummyYogaClasses: YogaClass[] = [
         },
         description: "하루의 피로를 풀어주는 저녁 요가 수업입니다.",
         instructorId: "inst_005",
-        cover_image_url: "https://example.com/evening-relax.jpg",
-        tagIds: ["tag_005"], // 저녁
+        image_urls: [
+            "https://images.unsplash.com/photo-1544367567-0f2fcb009e0b",
+            "https://images.unsplash.com/photo-1575052814086-f385e2e2ad1b",
+            "https://images.unsplash.com/photo-1506126613408-eca07ce68773",
+        ],
+        tagIds: ["tag_005"],
+        difficulty: DIFFICULTY_LEVELS[0],
+        isIndoor: LOCATION_TYPE.INDOOR,
         createdAt: new Date("2024-01-05"),
         updatedAt: new Date("2024-01-05"),
     },

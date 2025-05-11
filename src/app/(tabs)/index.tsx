@@ -8,12 +8,14 @@ import {
 } from "@/components/SvgIcons";
 import { dummyYogaClasses, enrichedDummyTimeSlots } from "@/dummyData";
 import { YogaClass } from "@/types/types";
+import { useRouter } from "expo-router";
 import { useMemo, useState } from "react";
-import { FlatList, Pressable, View } from "react-native";
+import { FlatList, Image, Pressable, View } from "react-native";
 
 export default function HomeScreen() {
-    const [selectedDate, setSelectedDate] = useState(new Date());
+    const router = useRouter();
     const [selectedDay, setSelectedDay] = useState<number | null>(null);
+    const [selectedDateInfo, setSelectedDateInfo] = useState<Date | null>(null);
 
     // Generate dates array
     const days = useMemo(() => {
@@ -36,6 +38,12 @@ export default function HomeScreen() {
 
         return dates;
     }, [selectedDay]);
+
+    // Get the display date (today if no day selected, otherwise the selected day's date)
+    const displayDate = useMemo(() => {
+        if (selectedDateInfo) return selectedDateInfo;
+        return new Date();
+    }, [selectedDateInfo]);
 
     // Helper function to find minimum price for a class
     const getMinPriceForClass = (classId: string): number => {
@@ -63,14 +71,37 @@ export default function HomeScreen() {
     const filters = ["지역", "카테고리", "난이도", "태그"];
 
     const YogaClassCard = ({ item }: { item: YogaClass }) => (
-        <View className="single-card w-full gap-[10px] px-[20px]">
-            <View className="card-image h-[150px] bg-gray-200 rounded-[10px]"></View>
-            <View className="card-content gap-[7px]">
+        <Pressable
+            onPress={() =>
+                router.push({
+                    pathname: "/[classId]",
+                    params: { classId: item.id },
+                })
+            }
+            className="single-card w-full gap-[10px] px-[20px]"
+        >
+            <View
+                key="image"
+                className="card-image h-[150px] rounded-[10px] overflow-hidden"
+            >
+                <Image
+                    source={{ uri: item.image_urls[0] }}
+                    className="w-full h-full"
+                    resizeMode="cover"
+                />
+            </View>
+            <View key="content" className="card-content gap-[7px]">
                 <AppText weight="semibold" className="text-[17px]">
                     {item.title}
                 </AppText>
-                <View className="card-meta-container flex-row items-center gap-[5px]">
-                    <View className="card-location-container flex-row items-center gap-[5px]">
+                <View
+                    key="meta"
+                    className="card-meta-container flex-row items-center gap-[10px]"
+                >
+                    <View
+                        key="location"
+                        className="card-location-container flex-row items-center gap-[5px]"
+                    >
                         <AddressIcon />
                         <AppText className="text-[13px] text-tertiary">
                             {item.location
@@ -78,7 +109,10 @@ export default function HomeScreen() {
                                 : "위치 정보 없음"}
                         </AppText>
                     </View>
-                    <View className="card-date-container flex-row items-center gap-[5px]">
+                    <View
+                        key="date"
+                        className="card-date-container flex-row items-center gap-[5px]"
+                    >
                         <CalendarIcon />
                         <AppText className="text-[13px] text-tertiary">
                             <FormattedTimeSlots
@@ -89,7 +123,10 @@ export default function HomeScreen() {
                         </AppText>
                     </View>
                 </View>
-                <View className="card-price-container flex-row items-center gap-[5px]">
+                <View
+                    key="price"
+                    className="card-price-container flex-row items-center gap-[5px]"
+                >
                     <AppText className="text-[16px] tracking-[0.014px]">
                         {`${getMinPriceForClass(item.id).toLocaleString()}원~`}
                     </AppText>
@@ -98,7 +135,7 @@ export default function HomeScreen() {
                     </AppText>
                 </View>
             </View>
-        </View>
+        </Pressable>
     );
 
     return (
@@ -107,8 +144,8 @@ export default function HomeScreen() {
             <View className="date-picker-container">
                 <Pressable className="date-picker-header py-[15px] flex-row justify-center items-center gap-[3px] self-stretch">
                     <AppText weight="semibold" className="text-[17px]">
-                        {`${selectedDate.getFullYear()}년 ${
-                            selectedDate.getMonth() + 1
+                        {`${displayDate.getFullYear()}년 ${
+                            displayDate.getMonth() + 1
                         }월`}
                     </AppText>
                     <DownArrowIcon />
@@ -123,11 +160,15 @@ export default function HomeScreen() {
                     }}
                     renderItem={({ item: day }) => (
                         <Pressable
-                            onPress={() =>
-                                setSelectedDay(
-                                    selectedDay === day.date ? null : day.date
-                                )
-                            }
+                            onPress={() => {
+                                if (selectedDay === day.date) {
+                                    setSelectedDay(null);
+                                    setSelectedDateInfo(null);
+                                } else {
+                                    setSelectedDay(day.date);
+                                    setSelectedDateInfo(day.fullDate);
+                                }
+                            }}
                             className="one-day-container items-center gap-[6px] mx-[10px]"
                         >
                             <AppText>{day.label}</AppText>
