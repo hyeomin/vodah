@@ -27,6 +27,7 @@ export default function HomeScreen() {
     const [selectedCity, setSelectedCity] = useState<string | null>("서울");
     const [selectedDistricts, setSelectedDistricts] = useState<string[]>([]);
     const [selectedTags, setSelectedTags] = useState<string[]>([]);
+
     const { data: yogaClasses, loading, error } = useYogaClasses();
     const { data: timeSlots = [], loading: loadingSlots } = useTimeSlots();
     const { data: reservations = [], loading: loadingRes } = useReservations();
@@ -145,6 +146,10 @@ export default function HomeScreen() {
     const scrollViewRef = useRef<ScrollView>(null);
     const handleCloseBottomSheet = () => bottomSheetRef.current?.close();
     const handleOpenBottomSheet = () => bottomSheetRef.current?.snapToIndex(1);
+    const handleShowResults = () => {
+        // TODO: Implement results filtering logic here
+        handleCloseBottomSheet();
+    };
 
     const handleTagTabPress = () => {
         setSelectedTab("tag");
@@ -459,6 +464,36 @@ export default function HomeScreen() {
                             </BottomSheetView>
                         </View>
                     </BottomSheetScrollView>
+                    <View className="bg-white absolute bottom-0 left-0 right-0 p-[20px] flex-row gap-[10px]">
+                        <Pressable
+                            className="bg-white py-[15px] px-[40px] border border-border rounded-[7px] items-center"
+                            onPress={handleCloseBottomSheet}
+                        >
+                            <AppText className="text-[14px]" weight="semibold">
+                                닫기
+                            </AppText>
+                        </Pressable>
+                        <Pressable
+                            className={`flex-1 py-[15px] rounded-[7px] items-center ${
+                                selectedDistricts.length > 0 ||
+                                selectedTags.length > 0
+                                    ? "bg-primary"
+                                    : "bg-disabled"
+                            }`}
+                            onPress={handleShowResults}
+                            disabled={
+                                selectedDistricts.length === 0 &&
+                                selectedTags.length === 0
+                            }
+                        >
+                            <AppText
+                                className="text-white text-[14px]"
+                                weight="semibold"
+                            >
+                                결과보기
+                            </AppText>
+                        </Pressable>
+                    </View>
                 </BottomSheetView>
             </BottomSheet>
         </View>
