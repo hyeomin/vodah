@@ -1,21 +1,78 @@
 import AppText from "@/components/Apptext";
-import FormattedTimeSlots from "@/components/FormattedTimeSlots";
+import YogaClassCard from "@/components/YogaClassCard";
+import { useReservations } from "@/hooks/useReservations";
+import { useSupabase } from "@/hooks/useSupabase";
+import { useTimeSlots } from "@/hooks/useTimeSlots";
+import { useYogaClasses } from "@/hooks/useYogaClasses";
+import { enrichTimeSlots } from "@/utils/transformers";
+import BottomSheet, {
+    BottomSheetBackdrop,
+    BottomSheetHandle,
+    BottomSheetScrollView,
+    BottomSheetView,
+} from "@gorhom/bottom-sheet";
+import { useCallback, useMemo, useRef, useState } from "react";
 import {
-    AddressIcon,
-    CalendarIcon,
-    DownArrowIcon,
-    FilterIcon,
-} from "@/components/SvgIcons";
-import { dummyYogaClasses, enrichedDummyTimeSlots } from "@/dummyData";
-import { YogaClass } from "@/types/types";
-import { useRouter } from "expo-router";
-import { useMemo, useState } from "react";
-import { FlatList, Image, Pressable, View } from "react-native";
+    ActivityIndicator,
+    FlatList,
+    Pressable,
+    ScrollView,
+    View,
+} from "react-native";
 
 export default function HomeScreen() {
-    const router = useRouter();
     const [selectedDay, setSelectedDay] = useState<number | null>(null);
     const [selectedDateInfo, setSelectedDateInfo] = useState<Date | null>(null);
+    const [selectedTab, setSelectedTab] = useState<"region" | "tag">("region");
+    const [selectedCity, setSelectedCity] = useState<string | null>("서울");
+    const [selectedDistricts, setSelectedDistricts] = useState<string[]>([]);
+    const [selectedTags, setSelectedTags] = useState<string[]>([]);
+    const { data: yogaClasses, loading, error } = useYogaClasses();
+    const { data: timeSlots = [], loading: loadingSlots } = useTimeSlots();
+    const { data: reservations = [], loading: loadingRes } = useReservations();
+
+    const enrichedTimeSlots = useMemo(
+        () => enrichTimeSlots(timeSlots, reservations),
+        [timeSlots, reservations]
+    );
+
+    const uniqueCities = useMemo(() => {
+        if (!yogaClasses) return [];
+        const cities = yogaClasses
+            .map((yogaClass) => yogaClass.location?.city)
+            .filter(Boolean);
+        return [...new Set(cities)];
+    }, [yogaClasses]);
+
+    const uniqueDistricts = useMemo(() => {
+        if (!yogaClasses) return [];
+        const districts = yogaClasses
+            .filter((yogaClass) =>
+                selectedCity ? yogaClass.location?.city === selectedCity : true
+            )
+            .map((yogaClass) => yogaClass.location?.gu)
+            .filter(Boolean);
+        return [...new Set(districts)];
+    }, [yogaClasses, selectedCity]);
+
+    const uniqueTags = useMemo(() => {
+        if (!yogaClasses) return [];
+        const allTagIds = yogaClasses
+            .flatMap((yogaClass) => yogaClass.tagIds)
+            .filter(Boolean);
+        return [...new Set(allTagIds)];
+    }, [yogaClasses]);
+
+    const { data: tags = [], loading: loadingTags } = useSupabase<{
+        id: string;
+        name: string;
+    }>("yoga_class_tags", {
+        select: "*",
+        filter:
+            uniqueTags.length > 0
+                ? [{ column: "id", operator: "in", value: uniqueTags }]
+                : [],
+    });
 
     // Generate dates array
     const days = useMemo(() => {
@@ -47,7 +104,7 @@ export default function HomeScreen() {
 
     // Helper function to find minimum price for a class
     const getMinPriceForClass = (classId: string): number => {
-        const classTimeSlots = enrichedDummyTimeSlots.filter(
+        const classTimeSlots = enrichedTimeSlots.filter(
             (slot) => slot.classId === classId && !slot.isFull
         );
         if (classTimeSlots.length === 0) return 0;
@@ -56,90 +113,71 @@ export default function HomeScreen() {
 
     // Filter yoga classes based on selected date
     const filteredYogaClasses = useMemo(() => {
-        if (selectedDay === null) return dummyYogaClasses;
+        if (!yogaClasses) return [];
 
-        return dummyYogaClasses.filter((yogaClass) => {
-            const hasMatchingTimeSlot = enrichedDummyTimeSlots.some(
+        const now = new Date();
+
+        // First filter out classes that only have time slots in the past
+        const classesWithFutureSlots = yogaClasses.filter((yogaClass) => {
+            const classTimeSlots = enrichedTimeSlots.filter(
+                (slot) => slot.classId === yogaClass.id
+            );
+            return classTimeSlots.some((slot) => slot.startTime > now);
+        });
+
+        // Then apply date filter if a day is selected
+        if (selectedDay === null) return classesWithFutureSlots;
+
+        return classesWithFutureSlots.filter((yogaClass) => {
+            const hasMatchingTimeSlot = enrichedTimeSlots.some(
                 (slot) =>
                     slot.classId === yogaClass.id &&
-                    new Date(slot.startTime).getDate() === selectedDay
+                    new Date(slot.startTime).getDate() === selectedDay &&
+                    slot.startTime > now
             );
             return hasMatchingTimeSlot;
         });
-    }, [selectedDay]);
+    }, [selectedDay, yogaClasses, enrichedTimeSlots]);
 
-    const filters = ["지역", "카테고리", "난이도", "태그"];
+    const snapPoints = useMemo(() => ["25%", "75%"], []);
+    const bottomSheetRef = useRef<BottomSheet>(null);
+    const tagContentRef = useRef<View>(null);
+    const scrollViewRef = useRef<ScrollView>(null);
+    const handleCloseBottomSheet = () => bottomSheetRef.current?.close();
+    const handleOpenBottomSheet = () => bottomSheetRef.current?.snapToIndex(1);
 
-    const YogaClassCard = ({ item }: { item: YogaClass }) => (
-        <Pressable
-            onPress={() =>
-                router.push({
-                    pathname: "/[classId]",
-                    params: { classId: item.id },
-                })
-            }
-            className="single-card w-full gap-[10px] px-[20px]"
-        >
-            <View
-                key="image"
-                className="card-image h-[150px] rounded-[10px] overflow-hidden"
-            >
-                <Image
-                    source={{ uri: item.image_urls[0] }}
-                    className="w-full h-full"
-                    resizeMode="cover"
-                />
-            </View>
-            <View key="content" className="card-content gap-[7px]">
-                <AppText weight="semibold" className="text-[17px]">
-                    {item.title}
-                </AppText>
-                <View
-                    key="meta"
-                    className="card-meta-container flex-row items-center gap-[10px]"
-                >
-                    <View
-                        key="location"
-                        className="card-location-container flex-row items-center gap-[5px]"
-                    >
-                        <AddressIcon />
-                        <AppText className="text-[13px] text-tertiary">
-                            {item.location
-                                ? `${item.location.city} ${item.location.gu} ${item.location.dong}`
-                                : "위치 정보 없음"}
-                        </AppText>
-                    </View>
-                    <View
-                        key="date"
-                        className="card-date-container flex-row items-center gap-[5px]"
-                    >
-                        <CalendarIcon />
-                        <AppText className="text-[13px] text-tertiary">
-                            <FormattedTimeSlots
-                                timeSlots={enrichedDummyTimeSlots}
-                                classId={item.id}
-                                className="text-[13px] text-tertiary"
-                            />
-                        </AppText>
-                    </View>
-                </View>
-                <View
-                    key="price"
-                    className="card-price-container flex-row items-center gap-[5px]"
-                >
-                    <AppText className="text-[16px] tracking-[0.014px]">
-                        {`${getMinPriceForClass(item.id).toLocaleString()}원~`}
-                    </AppText>
-                    <AppText className="text-[13px] text-tertiary">
-                        / 1회
-                    </AppText>
-                </View>
-            </View>
-        </Pressable>
+    const handleTagTabPress = () => {
+        setSelectedTab("tag");
+        handleOpenBottomSheet();
+        // Wait for the next frame to ensure the content is rendered
+        setTimeout(() => {
+            tagContentRef.current?.measure(
+                (x, y, width, height, pageX, pageY) => {
+                    scrollViewRef.current?.scrollTo({
+                        y: pageY,
+                        animated: true,
+                    });
+                }
+            );
+        }, 0);
+    };
+
+    const renderBackdrop = useCallback(
+        (props: any) => (
+            <BottomSheetBackdrop
+                {...props}
+                appearsOnIndex={0}
+                disappearsOnIndex={-1}
+            />
+        ),
+        []
     );
+
+    const isAnyLoading = loading || loadingSlots || loadingRes || loadingTags;
 
     return (
         <View className="container bg-background flex-1">
+            {/* <Link href="/login">Login</Link> */}
             {/* Date Picker */}
             <View className="date-picker-container">
                 <Pressable className="date-picker-header py-[15px] flex-row justify-center items-center gap-[3px] self-stretch">
@@ -148,7 +186,7 @@ export default function HomeScreen() {
                             displayDate.getMonth() + 1
                         }월`}
                     </AppText>
-                    <DownArrowIcon />
+                    {/* <DownArrowIcon />  */}
                 </Pressable>
                 <FlatList
                     data={days}
@@ -199,28 +237,230 @@ export default function HomeScreen() {
 
             {/* Filter Bar */}
             <View className="filter-container flex-row px-[20px] py-[10px] gap-[5px] items-center">
-                <View className="filter-summary flex-row items-center px-[15px] py-[7px] gap-[5px] rounded-[15px] border border-border">
-                    <FilterIcon />
-                    <AppText className="text-[13px]">필터</AppText>
-                </View>
-                {filters.map((filter) => (
-                    <View
-                        key={filter}
-                        className="filter-option items-center px-[15px] py-[7px] gap-[5px] rounded-[15px] border border-border"
-                    >
-                        <AppText>{filter}</AppText>
+                <Pressable onPress={handleOpenBottomSheet}>
+                    <View className="filter-option-region items-center px-[15px] py-[7px] gap-[5px] rounded-[15px] border border-border">
+                        <AppText>지역</AppText>
                     </View>
-                ))}
+                </Pressable>
+                <Pressable onPress={handleTagTabPress}>
+                    <View className="filter-option-tag items-center px-[15px] py-[7px] gap-[5px] rounded-[15px] border border-border">
+                        <AppText>태그</AppText>
+                    </View>
+                </Pressable>
             </View>
 
             {/* Card List */}
-            <FlatList
-                data={filteredYogaClasses}
-                renderItem={YogaClassCard}
-                keyExtractor={(item) => item.id}
-                contentContainerStyle={{ paddingVertical: 10, gap: 30 }}
-                showsVerticalScrollIndicator={false}
-            />
+            {isAnyLoading ? (
+                <View className="flex-1 justify-center items-center">
+                    <ActivityIndicator size="large" color="#0000ff" />
+                </View>
+            ) : error ? (
+                <View className="flex-1 justify-center items-center">
+                    <AppText className="text-red-500">
+                        Error loading classes
+                    </AppText>
+                </View>
+            ) : (
+                <FlatList
+                    data={filteredYogaClasses}
+                    renderItem={({ item }) => (
+                        <YogaClassCard
+                            item={item}
+                            enrichedTimeSlots={enrichedTimeSlots}
+                            getMinPriceForClass={getMinPriceForClass}
+                        />
+                    )}
+                    keyExtractor={(item) => item.id}
+                    contentContainerStyle={{ paddingVertical: 10, gap: 30 }}
+                    showsVerticalScrollIndicator={false}
+                />
+            )}
+            <BottomSheet
+                ref={bottomSheetRef}
+                index={0}
+                snapPoints={snapPoints}
+                backgroundStyle={{ backgroundColor: "white" }}
+                style={{ flex: 1 }}
+                enablePanDownToClose={true}
+                backdropComponent={renderBackdrop}
+                handleComponent={(props) => (
+                    <BottomSheetHandle
+                        {...props}
+                        style={{
+                            height: 30,
+                            borderTopLeftRadius: 10,
+                            borderTopRightRadius: 10,
+                        }}
+                    />
+                )}
+                enableContentPanningGesture={false}
+                enableHandlePanningGesture={true}
+            >
+                <BottomSheetView className="flex-1">
+                    <BottomSheetView className="filter-tab-container border-b border-border flex-row px-[20px] gap-[10px] absolute top-0 left-0 right-0 bg-white z-10">
+                        <Pressable onPress={() => setSelectedTab("region")}>
+                            <AppText
+                                weight="semibold"
+                                className={`filter-name-region self-start text-[15px] p-[10px] ${
+                                    selectedTab === "region"
+                                        ? "border-b-2 border-black"
+                                        : "text-primary"
+                                }`}
+                            >
+                                지역
+                            </AppText>
+                        </Pressable>
+                        <Pressable onPress={handleTagTabPress}>
+                            <AppText
+                                className={`filter-name-tag self-start text-[15px] p-[10px] ${
+                                    selectedTab === "tag"
+                                        ? "border-b-2 border-black"
+                                        : "text-primary"
+                                }`}
+                            >
+                                태그
+                            </AppText>
+                        </Pressable>
+                    </BottomSheetView>
+                    <BottomSheetScrollView
+                        ref={scrollViewRef}
+                        className="filter-content-container flex-1 mt-[60px]"
+                        showsVerticalScrollIndicator={true}
+                    >
+                        <BottomSheetView className="region-filter-content p-[25px] gap-[15px]">
+                            <AppText
+                                weight="semibold"
+                                className="filter-title text-[17px] px-[5px]"
+                            >
+                                지역
+                            </AppText>
+                            {/* 요가 클래스 데이터에 한 번이라도 포함된 city unique하게 fetch */}
+                            <BottomSheetView className="filter-content-list flex-row flex-wrap justify-between">
+                                {uniqueCities.map((city) => (
+                                    <Pressable
+                                        key={city}
+                                        className="w-[20%] items-center py-[10px]"
+                                        onPress={() =>
+                                            city &&
+                                            setSelectedCity(
+                                                selectedCity === city
+                                                    ? null
+                                                    : city
+                                            )
+                                        }
+                                    >
+                                        <AppText
+                                            weight={
+                                                selectedCity === city
+                                                    ? "bold"
+                                                    : "semibold"
+                                            }
+                                            className={`text-[14px] text-center ${
+                                                selectedCity === city
+                                                    ? "text-primary"
+                                                    : ""
+                                            }`}
+                                        >
+                                            {city}
+                                        </AppText>
+                                    </Pressable>
+                                ))}
+                            </BottomSheetView>
+                            {/* 선택된 city에 대한 district unique하게 fetch; 한 번이라도 동일한 요가 클래스에서 같이 등장한 city와 district */}
+                            {selectedCity && (
+                                <BottomSheetView className="filter-content-list-minor flex-row flex-wrap bg-border rounded-[10px] p-[15px] gap-[10px]">
+                                    {uniqueDistricts.map(
+                                        (district) =>
+                                            district && (
+                                                <Pressable
+                                                    key={district}
+                                                    className={`p-[7px] rounded-[7px] ${
+                                                        selectedDistricts.includes(
+                                                            district
+                                                        )
+                                                            ? "bg-primary"
+                                                            : "bg-white"
+                                                    }`}
+                                                    onPress={() => {
+                                                        setSelectedDistricts(
+                                                            (prev) =>
+                                                                prev.includes(
+                                                                    district
+                                                                )
+                                                                    ? prev.filter(
+                                                                          (d) =>
+                                                                              d !==
+                                                                              district
+                                                                      )
+                                                                    : [
+                                                                          ...prev,
+                                                                          district,
+                                                                      ]
+                                                        );
+                                                    }}
+                                                >
+                                                    <AppText
+                                                        className={`text-[14px] text-center ${
+                                                            selectedDistricts.includes(
+                                                                district
+                                                            )
+                                                                ? "text-white"
+                                                                : ""
+                                                        }`}
+                                                    >
+                                                        {district}
+                                                    </AppText>
+                                                </Pressable>
+                                            )
+                                    )}
+                                </BottomSheetView>
+                            )}
+                        </BottomSheetView>
+                        <View
+                            className="tag-filter-content p-[25px] gap-[15px] mt-[20px]"
+                            ref={tagContentRef}
+                        >
+                            <AppText
+                                weight="semibold"
+                                className="filter-title text-[17px] px-[5px]"
+                            >
+                                태그
+                            </AppText>
+                            <BottomSheetView className="filter-content-list flex-row flex-wrap bg-border rounded-[10px] p-[15px] gap-[10px]">
+                                {tags.map((tag) => (
+                                    <Pressable
+                                        key={tag.id}
+                                        className={`p-[7px] rounded-[7px] ${
+                                            selectedTags.includes(tag.id)
+                                                ? "bg-primary"
+                                                : "bg-white"
+                                        }`}
+                                        onPress={() => {
+                                            setSelectedTags((prev) =>
+                                                prev.includes(tag.id)
+                                                    ? prev.filter(
+                                                          (id) => id !== tag.id
+                                                      )
+                                                    : [...prev, tag.id]
+                                            );
+                                        }}
+                                    >
+                                        <AppText
+                                            className={`text-[14px] text-center ${
+                                                selectedTags.includes(tag.id)
+                                                    ? "text-white"
+                                                    : ""
+                                            }`}
+                                        >
+                                            {tag.name}
+                                        </AppText>
+                                    </Pressable>
+                                ))}
+                            </BottomSheetView>
+                        </View>
+                    </BottomSheetScrollView>
+                </BottomSheetView>
+            </BottomSheet>
         </View>
     );
 }

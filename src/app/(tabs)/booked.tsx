@@ -1,14 +1,51 @@
 import AppText from "@/components/Apptext";
 import { AddressIcon } from "@/components/SvgIcons";
-import { enrichedDummyReservations } from "@/dummyData";
-import React from "react";
-import { FlatList, View } from "react-native";
+import { useReservations } from "@/hooks/useReservations";
+import { useTimeSlots } from "@/hooks/useTimeSlots";
+import { useYogaClasses } from "@/hooks/useYogaClasses";
+import React, { useMemo } from "react";
+import { ActivityIndicator, FlatList, View } from "react-native";
 
 const BookedScreen = () => {
+    const { data: reservations = [], loading: loadingRes } = useReservations();
+    const { data: timeSlots = [], loading: loadingSlots } = useTimeSlots();
+    const { data: yogaClasses = [], loading: loadingClasses } =
+        useYogaClasses();
+
+    const enrichedReservations = useMemo(() => {
+        return reservations.map((reservation) => {
+            const timeSlot = timeSlots.find(
+                (ts) => ts.id === reservation.timeslotId
+            );
+            const yogaClass = yogaClasses.find(
+                (yc) => yc.id === timeSlot?.classId
+            );
+
+            const locationDisplay = yogaClass?.location
+                ? [
+                      yogaClass.location.city,
+                      yogaClass.location.gu,
+                      yogaClass.location.dong,
+                  ]
+                      .filter(Boolean)
+                      .join(" ")
+                : "위치 정보 없음";
+
+            return {
+                id: reservation.id,
+                status: reservation.status,
+                classTitle: yogaClass?.title || "클래스 이름 없음",
+                location: locationDisplay,
+                startTime: timeSlot?.startTime || new Date(),
+                endTime: timeSlot?.endTime || new Date(),
+            };
+        });
+    }, [reservations, timeSlots, yogaClasses]);
+
     const renderReservationCard = ({
         item,
     }: {
-        item: (typeof enrichedDummyReservations)[0];
+        item: (typeof enrichedReservations)[0];
     }) => (
         <View className="card-item rounded-[10px] bg-[#F9F8F5] shadow-[0px_1px_10px_0px_rgba(0,0,0,0.15)] gap-[20px] p-[20px_15px_25px_15px] mx-[20px] my-[10px]">
             <View className="card-header flex-row gap-[10px]">
@@ -58,6 +95,14 @@ const BookedScreen = () => {
         </View>
     );
 
+    if (loadingRes || loadingSlots || loadingClasses) {
+        return (
+            <View className="flex-1 bg-background items-center justify-center">
+                <ActivityIndicator size="large" color="#0000ff" />
+            </View>
+        );
+    }
+
     return (
         <View className="flex-1 bg-background">
             <View className="p-[25px]">
@@ -66,7 +111,7 @@ const BookedScreen = () => {
                 </AppText>
             </View>
             <FlatList
-                data={enrichedDummyReservations}
+                data={enrichedReservations}
                 renderItem={renderReservationCard}
                 keyExtractor={(item) => item.id}
                 showsVerticalScrollIndicator={false}

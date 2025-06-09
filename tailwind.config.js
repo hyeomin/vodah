@@ -14,6 +14,7 @@ module.exports = {
                 linkBlue: "#0068C3",
                 disabled: "#D5D5D5",
                 background: "#F6F4F1",
+                danger: "#F25656",
             },
         },
     },

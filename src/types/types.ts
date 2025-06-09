@@ -38,6 +38,7 @@ export interface Instructor {
     name: string;
     bio: string | null;
     imageUrl: string | null;
+    instagram?: string | null;
     createdAt: Date;
     updatedAt: Date;
 }
@@ -50,22 +51,32 @@ export interface YogaClassTag {
 }
 
 export interface Location {
-    fullAddress: string;
-    city: string;
-    gu: string;
-    dong: string;
+    id: string;
+    roadAddress: string;
+    city: string | null;
+    gu: string | null;
+    dong: string | null;
+    latitude: number | null;
+    longitude: number | null;
+    dongAddress: string | null;
+    locationName: string | null;
+    createdAt: Date;
+    updatedAt: Date;
 }
 
 export interface YogaClass {
     id: string;
     title: string;
-    location: Location | null;
     description: string | null;
+    detailPostUrl: string | null;
     instructorId: string | null;
-    image_urls: string[];
+    imageUrls: string[];
     tagIds: string[];
     difficulty: DifficultyLevel;
     isIndoor: LocationType;
+    studioId: string | null;
+    locationId: string | null;
+    location: Location | null;
     createdAt: Date;
     updatedAt: Date;
 }
@@ -98,4 +109,10 @@ export interface Reservation {
     paymentStatus: PaymentStatus;
     createdAt: Date;
     updatedAt: Date;
+    consents: {
+        agreed_to_terms: boolean;
+        terms_agreed_at: string;
+        agreed_to_refund_policy: boolean;
+        refund_agreed_at: string;
+    };
 }

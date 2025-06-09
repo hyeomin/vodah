@@ -1,7 +1,12 @@
-import { EnrichedTimeSlot } from "@/dummyData";
+import { TimeSlot } from "@/types/types";
 import React from "react";
 import { View } from "react-native";
 import AppText from "./Apptext";
+
+interface EnrichedTimeSlot extends TimeSlot {
+    enrolledCount: number;
+    isFull: boolean;
+}
 
 interface FormattedTimeSlotsProps {
     timeSlots: EnrichedTimeSlot[];
@@ -14,49 +19,46 @@ export default function FormattedTimeSlots({
     classId,
     className,
 }: FormattedTimeSlotsProps) {
-    const formattedDates = (() => {
-        const dates = timeSlots
-            .filter((slot) => slot.classId === classId && !slot.isFull)
-            .map((slot) => slot.startTime)
-            .sort((a, b) => a.getTime() - b.getTime());
+    const classTimeSlots = timeSlots.filter((slot) => slot.classId === classId);
 
-        if (dates.length === 0) {
-            return (
-                <AppText className={className}>
-                    예약 가능한 날짜가 없습니다
-                </AppText>
-            );
+    if (classTimeSlots.length === 0) {
+        return null;
+    }
+
+    // Sort time slots by date
+    const sortedTimeSlots = [...classTimeSlots].sort(
+        (a, b) => a.startTime.getTime() - b.startTime.getTime()
+    );
+
+    // Group dates by month
+    const datesByMonth = new Map<number, string[]>();
+    sortedTimeSlots.forEach((slot) => {
+        const month = slot.startTime.getMonth();
+        const day = slot.startTime.getDate();
+        const weekday = slot.startTime.toLocaleDateString("ko-KR", {
+            weekday: "short",
+        });
+
+        if (!datesByMonth.has(month)) {
+            datesByMonth.set(month, []);
         }
+        datesByMonth.get(month)?.push(`${day}일(${weekday})`);
+    });
 
-        const groupedDates = dates.reduce((acc, date) => {
-            const month = date.getMonth() + 1;
-            const day = date.getDate();
-            if (!acc[month]) {
-                acc[month] = [];
-            }
-            acc[month].push(day);
-            return acc;
-        }, {} as Record<number, number[]>);
+    // Format the dates
+    const formattedDates = Array.from(datesByMonth.entries()).map(
+        ([month, days]) => {
+            const monthName = new Date(2024, month).toLocaleDateString(
+                "ko-KR",
+                { month: "long" }
+            );
+            return `${monthName} ${days.join(", ")}`;
+        }
+    );
 
-        return Object.entries(groupedDates).map(
-            ([month, days], index, array) => {
-                const sortedDays = days.sort((a, b) => a - b);
-                return (
-                    <React.Fragment key={month}>
-                        <AppText weight="semibold" className={className}>
-                            {month}월{" "}
-                        </AppText>
-                        <AppText className={className}>
-                            {sortedDays.join("일, ")}일
-                        </AppText>
-                        {index < array.length - 1 && (
-                            <AppText className={className}>, </AppText>
-                        )}
-                    </React.Fragment>
-                );
-            }
-        );
-    })();
-
-    return <View className="flex-row">{formattedDates}</View>;
+    return (
+        <View>
+            <AppText className={className}>{formattedDates.join(", ")}</AppText>
+        </View>
+    );
 }

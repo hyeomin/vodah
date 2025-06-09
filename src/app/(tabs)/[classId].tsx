@@ -6,20 +6,20 @@ import {
     ContactIcon,
     DownArrowIcon,
 } from "@/components/SvgIcons";
-import {
-    dummyInstructors,
-    dummyTags,
-    dummyYogaClasses,
-    enrichedDummyTimeSlots,
-} from "@/dummyData";
+import TimeSlotCard from "@/components/TimeSlotCard";
+import { useInstructors } from "@/hooks/useInstructors";
+import { useReservations } from "@/hooks/useReservations";
+import { useTimeSlots } from "@/hooks/useTimeSlots";
+import { useYogaClasses } from "@/hooks/useYogaClasses";
 import {
     DIFFICULTY_DISPLAY_NAMES,
-    Instructor,
     LOCATION_DISPLAY_NAMES,
 } from "@/types/types";
+import { enrichTimeSlots } from "@/utils/transformers";
 import { useLocalSearchParams, useRouter } from "expo-router";
-import React, { useState } from "react";
+import React, { useMemo, useState } from "react";
 import {
+    ActivityIndicator,
     Alert,
     Dimensions,
     Image,
@@ -32,7 +32,7 @@ import {
 import Svg, { G } from "react-native-svg";
 
 export default function ClassDetails() {
-    const { classId } = useLocalSearchParams();
+    const { classId } = useLocalSearchParams<{ classId: string }>();
     const router = useRouter();
     const [selectedTimeSlotId, setSelectedTimeSlotId] = useState<string | null>(
         null
@@ -40,11 +40,35 @@ export default function ClassDetails() {
     const [currentImageIndex, setCurrentImageIndex] = useState(0);
     const screenWidth = Dimensions.get("window").width;
 
-    const yogaClass = classId
-        ? dummyYogaClasses.find((yogaClass) => yogaClass.id === classId)
-        : dummyYogaClasses[0];
+    const {
+        data: yogaClasses,
+        loading: loadingClasses,
+        error: classesError,
+    } = useYogaClasses();
+    const { data: timeSlots = [], loading: loadingSlots } = useTimeSlots();
+    const { data: reservations = [], loading: loadingRes } = useReservations();
+    const { data: instructors = [], loading: loadingInstructors } =
+        useInstructors();
 
-    if (!yogaClass) {
+    const enrichedTimeSlots = useMemo(
+        () => enrichTimeSlots(timeSlots || [], reservations || []),
+        [timeSlots, reservations]
+    );
+
+    const yogaClass = yogaClasses?.find((yc) => yc.id === classId);
+
+    const isAnyLoading =
+        loadingClasses || loadingSlots || loadingRes || loadingInstructors;
+
+    if (isAnyLoading) {
+        return (
+            <View className="flex-1 bg-background items-center justify-center">
+                <ActivityIndicator size="large" color="#0000ff" />
+            </View>
+        );
+    }
+
+    if (classesError || !yogaClass) {
         return (
             <View className="flex-1 bg-background items-center justify-center">
                 <AppText>수업을 찾을 수 없습니다.</AppText>
@@ -52,17 +76,18 @@ export default function ClassDetails() {
         );
     }
 
-    const instructor = dummyInstructors.find(
-        (inst: Instructor) => inst.id === yogaClass.instructorId
-    ) || { name: "Unknown Instructor", bio: "No bio available" };
+    const instructor = instructors?.find(
+        (i) => i.id === yogaClass.instructorId
+    ) || {
+        name: "Unknown Instructor",
+        bio: "No bio available",
+        instagram: null,
+    };
 
-    const tags = yogaClass.tagIds.map((tagId) => {
-        const tag = dummyTags.find((t) => t.id === tagId);
-        return {
-            id: tagId,
-            name: tag?.name || tagId,
-        };
-    });
+    const tags = (yogaClass.tagIds || []).map((tagId) => ({
+        id: tagId,
+        name: tagId, // Replace with actual tag data
+    }));
 
     const handleScroll = (event: any) => {
         const contentOffset = event.nativeEvent.contentOffset.x;
@@ -71,15 +96,20 @@ export default function ClassDetails() {
     };
 
     const openExternalLink = async () => {
-        const url = "https://www.instagram.com/maitri._.hannam/";
-        const supported = await Linking.canOpenURL(url);
+        if (!yogaClass.detailPostUrl) {
+            Alert.alert("알림", "상세 정보 링크가 없습니다.");
+            return;
+        }
+        const supported = await Linking.canOpenURL(yogaClass.detailPostUrl);
 
         if (supported) {
-            await Linking.openURL(url);
+            await Linking.openURL(yogaClass.detailPostUrl);
         } else {
             Alert.alert("알림", "링크를 열 수 없습니다.");
         }
     };
+
+    const locationInfo = yogaClass.studio?.location || yogaClass.location;
 
     return (
         yogaClass && (
@@ -93,7 +123,7 @@ export default function ClassDetails() {
                         onScroll={handleScroll}
                         scrollEventThrottle={16}
                     >
-                        {yogaClass.image_urls?.map((url, index) => (
+                        {(yogaClass.imageUrls || []).map((url, index) => (
                             <View key={index} style={{ width: screenWidth }}>
                                 <Image
                                     source={{ uri: url }}
@@ -114,21 +144,35 @@ export default function ClassDetails() {
                         </Svg>
                     </Pressable>
                     <View className="bottom-of-image flex-row w-full justify-between items-center pl-[20px] py-[20px] absolute bottom-0">
-                        <View className="key-tag-container bg-white rounded-[5px] p-[5px]">
-                            <AppText className="text-[13px]">
-                                {`${
-                                    LOCATION_DISPLAY_NAMES[yogaClass.isIndoor]
-                                } · ${
+                        {/* Container to maintain left space when key-tag is hidden, preventing page-number from shifting left */}
+                        <View className="flex-1">
+                            {(() => {
+                                const location =
+                                    LOCATION_DISPLAY_NAMES[yogaClass.isIndoor];
+                                const difficulty =
                                     DIFFICULTY_DISPLAY_NAMES[
                                         yogaClass.difficulty
-                                    ]
-                                }`}
-                            </AppText>
+                                    ];
+
+                                if (!location && !difficulty) return null;
+
+                                return (
+                                    <View className="key-tag-container bg-white rounded-[5px] p-[5px]">
+                                        <AppText className="text-[13px]">
+                                            {!location
+                                                ? difficulty
+                                                : !difficulty
+                                                ? location
+                                                : `${location} · ${difficulty}`}
+                                        </AppText>
+                                    </View>
+                                );
+                            })()}
                         </View>
                         <View className="class-title-container w-[70px] p-[5px] justify-center items-center gap-[10px] rounded-l-[10px] bg-black/30">
                             <AppText className="page-number text-[13px] text-white">
                                 {`${currentImageIndex + 1}/${
-                                    yogaClass.image_urls?.length || 1
+                                    yogaClass.imageUrls?.length || 1
                                 }`}
                             </AppText>
                         </View>
@@ -151,15 +195,14 @@ export default function ClassDetails() {
                                         <View className="card-location-container flex-row items-center gap-[5px]">
                                             <AddressIcon />
                                             <AppText className="text-[13px] text-tertiary">
-                                                {`${yogaClass.location?.city} ${yogaClass.location?.gu} ${yogaClass.location?.dong}`}
+                                                {locationInfo?.roadAddress ||
+                                                    "위치 정보 없음"}
                                             </AppText>
                                         </View>
                                         <View className="card-date-container flex-row items-center gap-[5px]">
                                             <CalendarIcon />
                                             <FormattedTimeSlots
-                                                timeSlots={
-                                                    enrichedDummyTimeSlots
-                                                }
+                                                timeSlots={enrichedTimeSlots}
                                                 classId={yogaClass.id}
                                                 className="text-[13px] text-tertiary"
                                             />
@@ -192,7 +235,7 @@ export default function ClassDetails() {
                 </View>
 
                 {/* Instructor */}
-                <View className="instructor-container gap-[20px] p-[25px] border-b border-tertiary">
+                {/* <View className="instructor-container gap-[20px] p-[25px] border-b border-tertiary">
                     <View className="instructor-info-container gap-[20px]">
                         <AppText
                             weight="semibold"
@@ -215,10 +258,23 @@ export default function ClassDetails() {
                                 >
                                     {instructor.bio}
                                 </AppText>
+                                {instructor.instagram && (
+                                    <TouchableOpacity
+                                        onPress={() =>
+                                            Linking.openURL(
+                                                instructor.instagram!
+                                            )
+                                        }
+                                    >
+                                        <AppText className="text-[13px] text-linkBlue">
+                                            인스타그램 보기
+                                        </AppText>
+                                    </TouchableOpacity>
+                                )}
                             </View>
                         </View>
                     </View>
-                </View>
+                </View> */}
 
                 {/* Booking */}
                 <View className="booking-container gap-[20px] px-[25px] pt-[25px] pb-[35px] border-b border-tertiary">
@@ -234,101 +290,30 @@ export default function ClassDetails() {
                             showsHorizontalScrollIndicator={false}
                             className="time-slot-container flex-row "
                         >
-                            {enrichedDummyTimeSlots
+                            {enrichedTimeSlots
                                 .filter((slot) => slot.classId === yogaClass.id)
-                                .map((slot) => {
-                                    const date =
-                                        slot.startTime.toLocaleDateString(
-                                            "ko-KR",
-                                            {
-                                                month: "numeric",
-                                                day: "numeric",
-                                                weekday: "short",
-                                            }
-                                        );
-                                    const time =
-                                        slot.startTime.toLocaleTimeString(
-                                            "ko-KR",
-                                            {
-                                                hour: "numeric",
-                                                minute: "numeric",
-                                                hour12: true,
-                                            }
-                                        );
-
-                                    const isSelected =
-                                        selectedTimeSlotId === slot.id;
-
-                                    if (slot.isFull) {
-                                        return (
-                                            <View
-                                                key={slot.id}
-                                                className="one-slot-full bg-border w-[120px] p-[10px] gap-[5px] justify-center items-center rounded-[10px] mr-[15px]"
-                                            >
-                                                <AppText className="text-[13px] text-tertiary">
-                                                    {date}
-                                                </AppText>
-                                                <AppText className="time-slot-time text-[13px] text-tertiary">
-                                                    {time}
-                                                </AppText>
-                                                <AppText className="class-title text-[10px] text-tertiary text-center">
-                                                    {yogaClass.title}
-                                                </AppText>
-                                            </View>
-                                        );
-                                    }
-
-                                    if (isSelected) {
-                                        return (
-                                            <Pressable
-                                                key={slot.id}
-                                                onPress={() =>
-                                                    setSelectedTimeSlotId(null)
-                                                }
-                                                className="one-slot-selected bg-primary w-[120px] p-[10px] gap-[5px] justify-center items-center rounded-[10px] mr-[15px]"
-                                            >
-                                                <AppText
-                                                    weight="semibold"
-                                                    className="text-[13px] text-white"
-                                                >
-                                                    {date}
-                                                </AppText>
-                                                <AppText
-                                                    weight="semibold"
-                                                    className="text-[13px] text-white"
-                                                >
-                                                    {time}
-                                                </AppText>
-                                                <AppText
-                                                    weight="semibold"
-                                                    className="text-[10px] text-white text-center"
-                                                >
-                                                    {yogaClass.title}
-                                                </AppText>
-                                            </Pressable>
-                                        );
-                                    }
-
-                                    return (
-                                        <Pressable
-                                            key={slot.id}
-                                            onPress={() =>
-                                                setSelectedTimeSlotId(slot.id)
-                                            }
-                                            className="one-slot-default bg-background border border-primary w-[120px] p-[10px] gap-[5px] justify-center items-center rounded-[10px] mr-[15px]"
-                                        >
-                                            <AppText className="text-[13px]">
-                                                {date}
-                                            </AppText>
-                                            <AppText className="text-[13px]">
-                                                {time}
-                                            </AppText>
-                                            <AppText className="text-[10px] text-center">
-                                                {yogaClass.title}
-                                            </AppText>
-                                        </Pressable>
-                                    );
-                                })}
+                                .map((slot) => (
+                                    <TimeSlotCard
+                                        key={slot.id}
+                                        id={slot.id}
+                                        startTime={slot.startTime}
+                                        endTime={slot.endTime}
+                                        title={yogaClass.title}
+                                        price={slot.price}
+                                        isFull={slot.isFull}
+                                        isSelected={
+                                            selectedTimeSlotId === slot.id
+                                        }
+                                        onPress={() => {
+                                            if (slot.isFull) return;
+                                            setSelectedTimeSlotId(
+                                                selectedTimeSlotId === slot.id
+                                                    ? null
+                                                    : slot.id
+                                            );
+                                        }}
+                                    />
+                                ))}
                         </ScrollView>
                     </View>
                 </View>
@@ -338,27 +323,49 @@ export default function ClassDetails() {
                     <AppText weight="semibold" className="title text-[18px] ">
                         위치
                     </AppText>
-                    <View className="map-container bg-gray-300 h-[100px] rounded-[10px]"></View>
+                    {/* 지도 넣을 곳 */}
+                    {/* <View className="map-container bg-gray-300 h-[100px] rounded-[10px]"></View> */}
                     <AppText className="address text-[13px] px-[5px]">
-                        성남시 분당구 성남대로 393 두산위브 파빌리온 주소가
-                        길어지면 다음 줄로 넘어갑니다.
+                        {locationInfo?.roadAddress || "위치 정보 없음"}
                     </AppText>
                 </View>
 
                 {/* Booking CTA Container */}
-                <View className="booking-cta-container flex-row items-center bg-white gap-[15px] px-[30px] py-[20px]">
+                <View className="booking-cta-container flex-row items-center gap-[15px] px-[30px] py-[20px]">
                     <View className="contact-container gap-[5px] ">
                         <ContactIcon />
                         <AppText className="text-[13px]">문의</AppText>
                     </View>
-                    <View className="cta-button bg-primary items-center justify-center flex-1 rounded-[10px] p-[10px] h-[50px]">
-                        <AppText
-                            weight="semibold"
-                            className="text-[16px] text-white"
+                    <Pressable
+                        onPress={() => {
+                            if (selectedTimeSlotId) {
+                                router.push({
+                                    pathname: "/booking",
+                                    params: {
+                                        classId: yogaClass.id,
+                                        timeSlotId: selectedTimeSlotId,
+                                    },
+                                });
+                            }
+                        }}
+                        disabled={!selectedTimeSlotId}
+                        className="flex-1"
+                    >
+                        <View
+                            className={`cta-button items-center justify-center flex-1 rounded-[10px] p-[10px] h-[50px] ${
+                                selectedTimeSlotId
+                                    ? "bg-primary"
+                                    : "bg-disabled"
+                            }`}
                         >
-                            예약하기
-                        </AppText>
-                    </View>
+                            <AppText
+                                weight="semibold"
+                                className="text-[16px] text-white"
+                            >
+                                예약하기
+                            </AppText>
+                        </View>
+                    </Pressable>
                 </View>
             </ScrollView>
         )
