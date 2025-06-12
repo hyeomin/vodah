@@ -26,23 +26,6 @@ export default function TabsLayout() {
                         ),
                     }}
                 />
-                <Tabs.Screen
-                    name="booking"
-                    options={{
-                        title: "Booking",
-                        headerShown: false,
-                        tabBarIcon: ({ color }) => (
-                            <Feather name="calendar" size={24} color={color} />
-                        ),
-                    }}
-                />
-                <Tabs.Screen
-                    name="[classId]"
-                    options={{
-                        title: "Class",
-                        headerShown: false,
-                    }}
-                />
             </Tabs>
         </SafeAreaView>
     );

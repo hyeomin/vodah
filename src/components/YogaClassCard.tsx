@@ -3,7 +3,6 @@ import FormattedTimeSlots from "@/components/FormattedTimeSlots";
 import { AddressIcon, CalendarIcon } from "@/components/SvgIcons";
 import { EnrichedYogaClass } from "@/utils/transformers";
 import { useRouter } from "expo-router";
-import React from "react";
 import { Image, Pressable, View } from "react-native";
 
 interface YogaClassCardProps {
@@ -25,7 +24,7 @@ export default function YogaClassCard({
         <Pressable
             onPress={() => {
                 router.push({
-                    pathname: "/[classId]",
+                    pathname: "/class/[classId]",
                     params: { classId: item.id },
                 });
             }}
