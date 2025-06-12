@@ -192,10 +192,7 @@ const BookingScreen = () => {
         <ScrollView className="bg-background">
             <Pressable
                 onPress={() => {
-                    router.push({
-                        pathname: "/[classId]",
-                        params: { classId },
-                    });
+                    router.back();
                 }}
                 className="back-button bg-white rounded-full w-[35px] h-[35px] m-[20px] items-center justify-center absolute top-0 left-0 z-50"
             >

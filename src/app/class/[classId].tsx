@@ -31,6 +31,7 @@ import {
 } from "react-native";
 import Svg, { G } from "react-native-svg";
 
+
 export default function ClassDetails() {
     const { classId } = useLocalSearchParams<{ classId: string }>();
     const router = useRouter();
@@ -340,7 +341,7 @@ export default function ClassDetails() {
                         onPress={() => {
                             if (selectedTimeSlotId) {
                                 router.push({
-                                    pathname: "/booking",
+                                    pathname: "/class/booking",
                                     params: {
                                         classId: yogaClass.id,
                                         timeSlotId: selectedTimeSlotId,
