@@ -19,14 +19,18 @@ import {
     ScrollView,
     View,
 } from "react-native";
+import { Feather } from "@expo/vector-icons";
 
 export default function HomeScreen() {
     const [selectedDay, setSelectedDay] = useState<number | null>(null);
     const [selectedDateInfo, setSelectedDateInfo] = useState<Date | null>(null);
     const [selectedTab, setSelectedTab] = useState<"region" | "tag">("region");
-    const [selectedCity, setSelectedCity] = useState<string | null>("서울");
+    const [selectedCity, setSelectedCity] = useState<string | null>("");
     const [selectedDistricts, setSelectedDistricts] = useState<string[]>([]);
     const [selectedTags, setSelectedTags] = useState<string[]>([]);
+    const [tempSelectedCity, setTempSelectedCity] = useState<string | null>(selectedCity);
+    const [tempSelectedDistricts, setTempSelectedDistricts] = useState<string[]>(selectedDistricts);
+    const [tempSelectedTags, setTempSelectedTags] = useState<string[]>(selectedTags);
 
     const { data: yogaClasses, loading, error } = useYogaClasses();
     const { data: timeSlots = [], loading: loadingSlots } = useTimeSlots();
@@ -49,12 +53,12 @@ export default function HomeScreen() {
         if (!yogaClasses) return [];
         const districts = yogaClasses
             .filter((yogaClass) =>
-                selectedCity ? yogaClass.location?.city === selectedCity : true
+                tempSelectedCity ? yogaClass.location?.city === tempSelectedCity : true
             )
             .map((yogaClass) => yogaClass.location?.gu)
             .filter(Boolean);
         return [...new Set(districts)];
-    }, [yogaClasses, selectedCity]);
+    }, [yogaClasses, tempSelectedCity]);
 
     const uniqueTags = useMemo(() => {
         if (!yogaClasses) return [];
@@ -118,18 +122,26 @@ export default function HomeScreen() {
 
         const now = new Date();
 
-        // First filter out classes that only have time slots in the past
-        const classesWithFutureSlots = yogaClasses.filter((yogaClass) => {
-            const classTimeSlots = enrichedTimeSlots.filter(
-                (slot) => slot.classId === yogaClass.id
-            );
-            return classTimeSlots.some((slot) => slot.startTime > now);
+        const classIdToNextSlotTime = new Map<string, number>();
+        enrichedTimeSlots.forEach((slot) => {
+            if (slot.startTime > now) {
+                const prev = classIdToNextSlotTime.get(slot.classId);
+                if (!prev || slot.startTime < prev) {
+                    classIdToNextSlotTime.set(slot.classId, slot.startTime.getTime());
+                }
+            }
         });
 
-        // Then apply date filter if a day is selected
-        if (selectedDay === null) return classesWithFutureSlots;
+        // First filter out classes that only have time slots in the past
+        const classesWithFutureSlots = yogaClasses
+            .filter((yogaClass) => classIdToNextSlotTime.has(yogaClass.id))
+            .sort(
+                (a, b) =>
+                (classIdToNextSlotTime.get(a.id) ?? Infinity) -
+                (classIdToNextSlotTime.get(b.id) ?? Infinity)
+            );
 
-        return classesWithFutureSlots.filter((yogaClass) => {
+        const classWithMatchingDate = selectedDay ? classesWithFutureSlots.filter((yogaClass) => {
             const hasMatchingTimeSlot = enrichedTimeSlots.some(
                 (slot) =>
                     slot.classId === yogaClass.id &&
@@ -137,7 +149,21 @@ export default function HomeScreen() {
                     slot.startTime > now
             );
             return hasMatchingTimeSlot;
+        }) : classesWithFutureSlots;
+
+        const classWithMatchingCity = selectedCity ? classWithMatchingDate.filter((yogaClass) => {
+            return yogaClass.location?.city === selectedCity;
+        }) : classWithMatchingDate;
+
+        const classWithMatchingDistrict = selectedDistricts.length === 0 ? classWithMatchingCity : classWithMatchingCity.filter((yogaClass) => {
+            return selectedDistricts.includes(yogaClass.location?.gu ?? '');
         });
+
+        const classWithMatchingTag = selectedTags.length === 0 ? classWithMatchingDistrict : classWithMatchingDistrict.filter((yogaClass) => {
+            return yogaClass.tagIds.some((tagId) => selectedTags.includes(tagId));
+        });
+
+        return classWithMatchingTag;
     }, [selectedDay, yogaClasses, enrichedTimeSlots]);
 
     const snapPoints = useMemo(() => ["25%", "75%"], []);
@@ -145,9 +171,16 @@ export default function HomeScreen() {
     const tagContentRef = useRef<View>(null);
     const scrollViewRef = useRef<ScrollView>(null);
     const handleCloseBottomSheet = () => bottomSheetRef.current?.close();
-    const handleOpenBottomSheet = () => bottomSheetRef.current?.snapToIndex(1);
+    const handleOpenBottomSheet = () => {
+        setTempSelectedCity(selectedCity);
+        setTempSelectedDistricts(selectedDistricts);
+        setTempSelectedTags(selectedTags);
+        bottomSheetRef.current?.snapToIndex(1)
+    };
     const handleShowResults = () => {
-        // TODO: Implement results filtering logic here
+        setSelectedCity(tempSelectedCity);
+        setSelectedDistricts(tempSelectedDistricts);
+        setSelectedTags(tempSelectedTags);
         handleCloseBottomSheet();
     };
 
@@ -177,6 +210,14 @@ export default function HomeScreen() {
         ),
         []
     );
+
+    const handleResetFilters = () => {
+        setSelectedCity(null);
+        setSelectedDistricts([]);
+        setSelectedTags([]);
+        setSelectedDateInfo(null);
+        setSelectedDay(null);
+    };
 
     const isAnyLoading = loading || loadingSlots || loadingRes || loadingTags;
 
@@ -252,6 +293,9 @@ export default function HomeScreen() {
                         <AppText>태그</AppText>
                     </View>
                 </Pressable>
+                <Pressable onPress={handleResetFilters} style={{ marginLeft: 8 }}>
+                    <Feather name="rotate-ccw" size={20} color="#888" />
+                </Pressable>
             </View>
 
             {/* Card List */}
@@ -282,7 +326,7 @@ export default function HomeScreen() {
             )}
             <BottomSheet
                 ref={bottomSheetRef}
-                index={0}
+                index={-1}
                 snapPoints={snapPoints}
                 backgroundStyle={{ backgroundColor: "white" }}
                 style={{ flex: 1 }}
@@ -345,23 +389,25 @@ export default function HomeScreen() {
                                     <Pressable
                                         key={city}
                                         className="w-[20%] items-center py-[10px]"
-                                        onPress={() =>
-                                            city &&
-                                            setSelectedCity(
-                                                selectedCity === city
-                                                    ? null
-                                                    : city
-                                            )
+                                        onPress={() => {
+                                                city &&
+                                                setTempSelectedCity(
+                                                    tempSelectedCity === city
+                                                        ? null
+                                                        : city
+                                                )
+                                                setTempSelectedDistricts([]);
+                                            }
                                         }
                                     >
                                         <AppText
                                             weight={
-                                                selectedCity === city
+                                                tempSelectedCity === city
                                                     ? "bold"
                                                     : "semibold"
                                             }
                                             className={`text-[14px] text-center ${
-                                                selectedCity === city
+                                                tempSelectedCity === city
                                                     ? "text-primary"
                                                     : ""
                                             }`}
@@ -372,7 +418,7 @@ export default function HomeScreen() {
                                 ))}
                             </BottomSheetView>
                             {/* 선택된 city에 대한 district unique하게 fetch; 한 번이라도 동일한 요가 클래스에서 같이 등장한 city와 district */}
-                            {selectedCity && (
+                            {tempSelectedCity && (
                                 <BottomSheetView className="filter-content-list-minor flex-row flex-wrap bg-border rounded-[10px] p-[15px] gap-[10px]">
                                     {uniqueDistricts.map(
                                         (district) =>
@@ -380,14 +426,14 @@ export default function HomeScreen() {
                                                 <Pressable
                                                     key={district}
                                                     className={`p-[7px] rounded-[7px] ${
-                                                        selectedDistricts.includes(
+                                                        tempSelectedDistricts.includes(
                                                             district
                                                         )
                                                             ? "bg-primary"
                                                             : "bg-white"
                                                     }`}
                                                     onPress={() => {
-                                                        setSelectedDistricts(
+                                                        setTempSelectedDistricts(
                                                             (prev) =>
                                                                 prev.includes(
                                                                     district
@@ -406,7 +452,7 @@ export default function HomeScreen() {
                                                 >
                                                     <AppText
                                                         className={`text-[14px] text-center ${
-                                                            selectedDistricts.includes(
+                                                            tempSelectedDistricts.includes(
                                                                 district
                                                             )
                                                                 ? "text-white"
@@ -436,12 +482,12 @@ export default function HomeScreen() {
                                     <Pressable
                                         key={tag.id}
                                         className={`p-[7px] rounded-[7px] ${
-                                            selectedTags.includes(tag.id)
+                                            tempSelectedTags.includes(tag.id)
                                                 ? "bg-primary"
                                                 : "bg-white"
                                         }`}
                                         onPress={() => {
-                                            setSelectedTags((prev) =>
+                                            setTempSelectedTags((prev) =>
                                                 prev.includes(tag.id)
                                                     ? prev.filter(
                                                           (id) => id !== tag.id
@@ -452,7 +498,7 @@ export default function HomeScreen() {
                                     >
                                         <AppText
                                             className={`text-[14px] text-center ${
-                                                selectedTags.includes(tag.id)
+                                                tempSelectedTags.includes(tag.id)
                                                     ? "text-white"
                                                     : ""
                                             }`}
@@ -475,15 +521,15 @@ export default function HomeScreen() {
                         </Pressable>
                         <Pressable
                             className={`flex-1 py-[15px] rounded-[7px] items-center ${
-                                selectedDistricts.length > 0 ||
-                                selectedTags.length > 0
+                                tempSelectedDistricts.length > 0 ||
+                                tempSelectedTags.length > 0
                                     ? "bg-primary"
                                     : "bg-disabled"
                             }`}
                             onPress={handleShowResults}
                             disabled={
-                                selectedDistricts.length === 0 &&
-                                selectedTags.length === 0
+                                tempSelectedDistricts.length === 0 &&
+                                tempSelectedTags.length === 0
                             }
                         >
                             <AppText
