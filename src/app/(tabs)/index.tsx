@@ -5,6 +5,7 @@ import { useSupabase } from "@/hooks/useSupabase";
 import { useTimeSlots } from "@/hooks/useTimeSlots";
 import { useYogaClasses } from "@/hooks/useYogaClasses";
 import { enrichTimeSlots } from "@/utils/transformers";
+import { Feather } from "@expo/vector-icons";
 import BottomSheet, {
     BottomSheetBackdrop,
     BottomSheetHandle,
@@ -19,7 +20,6 @@ import {
     ScrollView,
     View,
 } from "react-native";
-import { Feather } from "@expo/vector-icons";
 
 export default function HomeScreen() {
     const [selectedDay, setSelectedDay] = useState<number | null>(null);
@@ -28,9 +28,13 @@ export default function HomeScreen() {
     const [selectedCity, setSelectedCity] = useState<string | null>("");
     const [selectedDistricts, setSelectedDistricts] = useState<string[]>([]);
     const [selectedTags, setSelectedTags] = useState<string[]>([]);
-    const [tempSelectedCity, setTempSelectedCity] = useState<string | null>(selectedCity);
-    const [tempSelectedDistricts, setTempSelectedDistricts] = useState<string[]>(selectedDistricts);
-    const [tempSelectedTags, setTempSelectedTags] = useState<string[]>(selectedTags);
+    const [tempSelectedCity, setTempSelectedCity] = useState<string | null>(
+        selectedCity
+    );
+    const [tempSelectedDistricts, setTempSelectedDistricts] =
+        useState<string[]>(selectedDistricts);
+    const [tempSelectedTags, setTempSelectedTags] =
+        useState<string[]>(selectedTags);
 
     const { data: yogaClasses, loading, error } = useYogaClasses();
     const { data: timeSlots = [], loading: loadingSlots } = useTimeSlots();
@@ -53,7 +57,9 @@ export default function HomeScreen() {
         if (!yogaClasses) return [];
         const districts = yogaClasses
             .filter((yogaClass) =>
-                tempSelectedCity ? yogaClass.location?.city === tempSelectedCity : true
+                tempSelectedCity
+                    ? yogaClass.location?.city === tempSelectedCity
+                    : true
             )
             .map((yogaClass) => yogaClass.location?.gu)
             .filter(Boolean);
@@ -126,8 +132,11 @@ export default function HomeScreen() {
         enrichedTimeSlots.forEach((slot) => {
             if (slot.startTime > now) {
                 const prev = classIdToNextSlotTime.get(slot.classId);
-                if (!prev || slot.startTime < prev) {
-                    classIdToNextSlotTime.set(slot.classId, slot.startTime.getTime());
+                if (!prev || slot.startTime.getTime() < prev) {
+                    classIdToNextSlotTime.set(
+                        slot.classId,
+                        slot.startTime.getTime()
+                    );
                 }
             }
         });
@@ -137,31 +146,45 @@ export default function HomeScreen() {
             .filter((yogaClass) => classIdToNextSlotTime.has(yogaClass.id))
             .sort(
                 (a, b) =>
-                (classIdToNextSlotTime.get(a.id) ?? Infinity) -
-                (classIdToNextSlotTime.get(b.id) ?? Infinity)
+                    (classIdToNextSlotTime.get(a.id) ?? Infinity) -
+                    (classIdToNextSlotTime.get(b.id) ?? Infinity)
             );
 
-        const classWithMatchingDate = selectedDay ? classesWithFutureSlots.filter((yogaClass) => {
-            const hasMatchingTimeSlot = enrichedTimeSlots.some(
-                (slot) =>
-                    slot.classId === yogaClass.id &&
-                    new Date(slot.startTime).getDate() === selectedDay &&
-                    slot.startTime > now
-            );
-            return hasMatchingTimeSlot;
-        }) : classesWithFutureSlots;
+        const classWithMatchingDate = selectedDay
+            ? classesWithFutureSlots.filter((yogaClass) => {
+                  const hasMatchingTimeSlot = enrichedTimeSlots.some(
+                      (slot) =>
+                          slot.classId === yogaClass.id &&
+                          new Date(slot.startTime).getDate() === selectedDay &&
+                          slot.startTime > now
+                  );
+                  return hasMatchingTimeSlot;
+              })
+            : classesWithFutureSlots;
 
-        const classWithMatchingCity = selectedCity ? classWithMatchingDate.filter((yogaClass) => {
-            return yogaClass.location?.city === selectedCity;
-        }) : classWithMatchingDate;
+        const classWithMatchingCity = selectedCity
+            ? classWithMatchingDate.filter((yogaClass) => {
+                  return yogaClass.location?.city === selectedCity;
+              })
+            : classWithMatchingDate;
 
-        const classWithMatchingDistrict = selectedDistricts.length === 0 ? classWithMatchingCity : classWithMatchingCity.filter((yogaClass) => {
-            return selectedDistricts.includes(yogaClass.location?.gu ?? '');
-        });
+        const classWithMatchingDistrict =
+            selectedDistricts.length === 0
+                ? classWithMatchingCity
+                : classWithMatchingCity.filter((yogaClass) => {
+                      return selectedDistricts.includes(
+                          yogaClass.location?.gu ?? ""
+                      );
+                  });
 
-        const classWithMatchingTag = selectedTags.length === 0 ? classWithMatchingDistrict : classWithMatchingDistrict.filter((yogaClass) => {
-            return yogaClass.tagIds.some((tagId) => selectedTags.includes(tagId));
-        });
+        const classWithMatchingTag =
+            selectedTags.length === 0
+                ? classWithMatchingDistrict
+                : classWithMatchingDistrict.filter((yogaClass) => {
+                      return yogaClass.tagIds.some((tagId) =>
+                          selectedTags.includes(tagId)
+                      );
+                  });
 
         return classWithMatchingTag;
     }, [selectedDay, yogaClasses, enrichedTimeSlots]);
@@ -175,7 +198,7 @@ export default function HomeScreen() {
         setTempSelectedCity(selectedCity);
         setTempSelectedDistricts(selectedDistricts);
         setTempSelectedTags(selectedTags);
-        bottomSheetRef.current?.snapToIndex(1)
+        bottomSheetRef.current?.snapToIndex(1);
     };
     const handleShowResults = () => {
         setSelectedCity(tempSelectedCity);
@@ -293,7 +316,10 @@ export default function HomeScreen() {
                         <AppText>태그</AppText>
                     </View>
                 </Pressable>
-                <Pressable onPress={handleResetFilters} style={{ marginLeft: 8 }}>
+                <Pressable
+                    onPress={handleResetFilters}
+                    style={{ marginLeft: 8 }}
+                >
                     <Feather name="rotate-ccw" size={20} color="#888" />
                 </Pressable>
             </View>
@@ -390,15 +416,14 @@ export default function HomeScreen() {
                                         key={city}
                                         className="w-[20%] items-center py-[10px]"
                                         onPress={() => {
-                                                city &&
+                                            city &&
                                                 setTempSelectedCity(
                                                     tempSelectedCity === city
                                                         ? null
                                                         : city
-                                                )
-                                                setTempSelectedDistricts([]);
-                                            }
-                                        }
+                                                );
+                                            setTempSelectedDistricts([]);
+                                        }}
                                     >
                                         <AppText
                                             weight={
@@ -498,7 +523,9 @@ export default function HomeScreen() {
                                     >
                                         <AppText
                                             className={`text-[14px] text-center ${
-                                                tempSelectedTags.includes(tag.id)
+                                                tempSelectedTags.includes(
+                                                    tag.id
+                                                )
                                                     ? "text-white"
                                                     : ""
                                             }`}
