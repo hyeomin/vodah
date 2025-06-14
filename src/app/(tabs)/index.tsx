@@ -547,17 +547,8 @@ export default function HomeScreen() {
                             </AppText>
                         </Pressable>
                         <Pressable
-                            className={`flex-1 py-[15px] rounded-[7px] items-center ${
-                                tempSelectedDistricts.length > 0 ||
-                                tempSelectedTags.length > 0
-                                    ? "bg-primary"
-                                    : "bg-disabled"
-                            }`}
+                            className="flex-1 py-[15px] rounded-[7px] items-center bg-primary"
                             onPress={handleShowResults}
-                            disabled={
-                                tempSelectedDistricts.length === 0 &&
-                                tempSelectedTags.length === 0
-                            }
                         >
                             <AppText
                                 className="text-white text-[14px]"
