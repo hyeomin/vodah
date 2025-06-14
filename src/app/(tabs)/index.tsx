@@ -1,4 +1,5 @@
 import AppText from "@/components/Apptext";
+import Footer from "@/components/Footer";
 import SvgIcons from "@/components/icons/SvgIcons";
 import YogaClassCard from "@/components/YogaClassCard";
 import { useReservations } from "@/hooks/useReservations";
@@ -335,7 +336,43 @@ export default function HomeScreen() {
                         Error loading classes
                     </AppText>
                 </View>
-            ) : (
+            ) :filteredYogaClasses.length === 0 ? (
+                <>
+                    <View
+                        style={{
+                            flex: 1,
+                            justifyContent: "center",
+                            alignItems: "center",
+                            paddingVertical: 10,
+                            gap: 30,
+                            width: "100%",
+                            paddingBottom: 260,
+                        }}
+                    >
+                    <AppText
+                        style={{
+                            fontFamily: "Pretendard",
+                            fontWeight: "400",
+                            fontSize: 14,
+                            lineHeight: 17,
+                            textAlign: "center",
+                            letterSpacing: 0.001,
+                            color: "#000",
+                        }}
+                    >
+                        {"죄송합니다. 해당하는 결과가 없습니다.\n얼른 더 많은 수업을 준비할게요!\n\n그전까지 다른 날짜 혹은 다른 수업을 알아봐주세요."}
+                    </AppText>
+                    </View>
+                    <View style={{
+                        position: "absolute",
+                        left: 0,
+                        right: 0,
+                        bottom: 0,
+                    }}>
+                        <Footer />
+                    </View>
+                </>
+              ) : (
                 <FlatList
                     data={filteredYogaClasses}
                     renderItem={({ item }) => (
@@ -346,8 +383,9 @@ export default function HomeScreen() {
                         />
                     )}
                     keyExtractor={(item) => item.id}
-                    contentContainerStyle={{ paddingVertical: 10, gap: 30 }}
+                    contentContainerStyle={{ gap: 30 }}
                     showsVerticalScrollIndicator={false}
+                    ListFooterComponent={<Footer />}
                 />
             )}
             <BottomSheet
