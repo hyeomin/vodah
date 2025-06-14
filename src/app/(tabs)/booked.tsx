@@ -1,5 +1,5 @@
 import AppText from "@/components/Apptext";
-import { AddressIcon } from "@/components/SvgIcons";
+import { AddressIcon } from "@/components/icons/SvgIcons";
 import { useReservations } from "@/hooks/useReservations";
 import { useTimeSlots } from "@/hooks/useTimeSlots";
 import { useYogaClasses } from "@/hooks/useYogaClasses";

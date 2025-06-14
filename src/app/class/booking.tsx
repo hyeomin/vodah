@@ -4,7 +4,7 @@ import {
     DownArrowIcon,
     MinusIcon,
     PlusIcon,
-} from "@/components/SvgIcons";
+} from "@/components/icons/SvgIcons";
 import { useReservations } from "@/hooks/useReservations";
 import { useSupabase } from "@/hooks/useSupabase";
 import { useTimeSlots } from "@/hooks/useTimeSlots";

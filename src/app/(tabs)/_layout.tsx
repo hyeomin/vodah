@@ -1,28 +1,43 @@
-import { Feather } from "@expo/vector-icons";
 import { Tabs } from "expo-router";
 import { SafeAreaView } from "react-native-safe-area-context";
+import TabIcon from "../../components/icons/TabIcon";
 
 export default function TabsLayout() {
     return (
         <SafeAreaView className="flex-1 bg-primary" edges={["top"]}>
-            <Tabs>
+            <Tabs
+                screenOptions={{
+                    tabBarStyle: {
+                        height: 90,
+                    },
+                    tabBarItemStyle: {
+                        paddingVertical: 5,
+                        alignItems: "center",
+                    },
+                    tabBarActiveTintColor: "#8889BD",
+                    tabBarInactiveTintColor: "#000000",
+                    tabBarLabelStyle: {
+                        color: "#8889BD",
+                    },
+                }}
+            >
                 <Tabs.Screen
                     name="index"
                     options={{
-                        title: "Home",
+                        title: "홈",
                         headerShown: false,
                         tabBarIcon: ({ color }) => (
-                            <Feather name="home" size={24} color={color} />
+                            <TabIcon color={color} size={22} name="home" />
                         ),
                     }}
                 />
                 <Tabs.Screen
                     name="booked"
                     options={{
-                        title: "Booked",
+                        title: "나의 수련",
                         headerShown: false,
                         tabBarIcon: ({ color }) => (
-                            <Feather name="calendar" size={24} color={color} />
+                            <TabIcon color={color} size={22} name="calendar" />
                         ),
                     }}
                 />
