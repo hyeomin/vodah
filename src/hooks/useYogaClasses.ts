@@ -68,6 +68,21 @@ export function useYogaClasses(options?: {
             studioIds.length > 0 ? [{ column: "id", value: studioIds }] : [],
     });
 
+    const { data: classToTags, loading: loadingClassToTags } = useSupabase<{
+        yoga_class_id: string;
+        tag_id: string;
+      }>("yoga_class_to_tag");
+
+    const classIdToTagIds = useMemo(() => {
+        const map: Record<string, string[]> = {};
+        if (!classToTags) return map;
+        classToTags.forEach(({ yoga_class_id, tag_id }) => {
+          if (!map[yoga_class_id]) map[yoga_class_id] = [];
+          map[yoga_class_id].push(tag_id);
+        });
+        return map;
+    }, [classToTags]);
+
     // Transform and enrich yoga classes with location and studio data
     const transformedData = useMemo(() => {
         if (!data || !locations || !studios) return [];
@@ -82,9 +97,11 @@ export function useYogaClasses(options?: {
             const studioLocation = studio
                 ? locations.find((l) => l.id === studio.location_id) || null
                 : null;
+            
+            const tagIds = classIdToTagIds[yc.id] ?? [];
 
             return enrichYogaClass(
-                transformed,
+                { ...transformed, tagIds},
                 studio && studioLocation
                     ? {
                           id: studio.id,
