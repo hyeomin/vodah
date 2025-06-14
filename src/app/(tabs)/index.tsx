@@ -1,11 +1,11 @@
 import AppText from "@/components/Apptext";
+import SvgIcons from "@/components/icons/SvgIcons";
 import YogaClassCard from "@/components/YogaClassCard";
 import { useReservations } from "@/hooks/useReservations";
 import { useSupabase } from "@/hooks/useSupabase";
 import { useTimeSlots } from "@/hooks/useTimeSlots";
 import { useYogaClasses } from "@/hooks/useYogaClasses";
 import { enrichTimeSlots } from "@/utils/transformers";
-import { Feather } from "@expo/vector-icons";
 import BottomSheet, {
     BottomSheetBackdrop,
     BottomSheetHandle,
@@ -316,11 +316,11 @@ export default function HomeScreen() {
                         <AppText>태그</AppText>
                     </View>
                 </Pressable>
-                <Pressable
-                    onPress={handleResetFilters}
-                    style={{ marginLeft: 8 }}
-                >
-                    <Feather name="rotate-ccw" size={20} color="#888" />
+                <Pressable onPress={handleResetFilters}>
+                    <View className="reset-filter flex-row items-center px-[15px] py-[7px] gap-[5px] rounded-[15px] border border-border">
+                        <SvgIcons.ResetIcon />
+                        <AppText>초기화</AppText>
+                    </View>
                 </Pressable>
             </View>
 
