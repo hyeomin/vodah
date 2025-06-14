@@ -5,7 +5,7 @@ import {
     CalendarIcon,
     ContactIcon,
     DownArrowIcon,
-} from "@/components/SvgIcons";
+} from "@/components/icons/SvgIcons";
 import TimeSlotCard from "@/components/TimeSlotCard";
 import { useInstructors } from "@/hooks/useInstructors";
 import { useReservations } from "@/hooks/useReservations";
@@ -30,7 +30,6 @@ import {
     View,
 } from "react-native";
 import Svg, { G } from "react-native-svg";
-
 
 export default function ClassDetails() {
     const { classId } = useLocalSearchParams<{ classId: string }>();

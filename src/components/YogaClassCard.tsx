@@ -1,6 +1,6 @@
 import AppText from "@/components/Apptext";
 import FormattedTimeSlots from "@/components/FormattedTimeSlots";
-import { AddressIcon, CalendarIcon } from "@/components/SvgIcons";
+import { AddressIcon, CalendarIcon } from "@/components/icons/SvgIcons";
 import { EnrichedYogaClass } from "@/utils/transformers";
 import { useRouter } from "expo-router";
 import { Image, Pressable, View } from "react-native";

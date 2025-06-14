@@ -1,5 +1,5 @@
 import AppText from "@/components/Apptext";
-import { DownArrowIcon } from "@/components/SvgIcons";
+import { DownArrowIcon } from "@/components/icons/SvgIcons";
 import { useRouter } from "expo-router";
 import React from "react";
 import { Pressable, ScrollView, View } from "react-native";
