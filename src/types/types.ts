@@ -79,6 +79,7 @@ export interface YogaClass {
     location: Location | null;
     createdAt: Date;
     updatedAt: Date;
+    tagNames: string[];
 }
 
 export interface User {
