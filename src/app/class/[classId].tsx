@@ -84,11 +84,6 @@ export default function ClassDetails() {
         instagram: null,
     };
 
-    const tags = (yogaClass.tagIds || []).map((tagId) => ({
-        id: tagId,
-        name: tagId, // Replace with actual tag data
-    }));
-
     const handleScroll = (event: any) => {
         const contentOffset = event.nativeEvent.contentOffset.x;
         const index = Math.round(contentOffset / screenWidth);
@@ -211,13 +206,13 @@ export default function ClassDetails() {
                                 </View>
                             </View>
                             <View className="card-tags-container flex-row items-center gap-[7px] ">
-                                {tags.map((tag) => (
+                                {yogaClass.tagNames.map((tag, i) => (
                                     <View
-                                        key={tag.id}
+                                        key={i}
                                         className="tag-container flex justify-center items-center p-[7px] gap-[10px] rounded-[7px] bg-primary"
                                     >
                                         <AppText className="text-[13px] text-white">
-                                            {tag.name}
+                                            {tag}
                                         </AppText>
                                     </View>
                                 ))}
