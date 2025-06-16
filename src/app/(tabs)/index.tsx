@@ -13,12 +13,11 @@ import BottomSheet, {
     BottomSheetScrollView,
     BottomSheetView,
 } from "@gorhom/bottom-sheet";
-import { useCallback, useMemo, useRef, useState } from "react";
+import React, { useCallback, useMemo, useRef, useState } from "react";
 import {
     ActivityIndicator,
     FlatList,
     Pressable,
-    ScrollView,
     View,
 } from "react-native";
 
@@ -192,14 +191,15 @@ export default function HomeScreen() {
 
     const snapPoints = useMemo(() => ["25%", "75%"], []);
     const bottomSheetRef = useRef<BottomSheet>(null);
+    const regionContentRef = useRef<View>(null);
     const tagContentRef = useRef<View>(null);
-    const scrollViewRef = useRef<ScrollView>(null);
+    const scrollViewRef = useRef<any>(null);
     const handleCloseBottomSheet = () => bottomSheetRef.current?.close();
     const handleOpenBottomSheet = () => {
         setTempSelectedCity(selectedCity);
         setTempSelectedDistricts(selectedDistricts);
         setTempSelectedTags(selectedTags);
-        bottomSheetRef.current?.snapToIndex(1);
+        bottomSheetRef.current?.expand();
     };
     const handleShowResults = () => {
         setSelectedCity(tempSelectedCity);
@@ -208,20 +208,34 @@ export default function HomeScreen() {
         handleCloseBottomSheet();
     };
 
+    const handleRegionTabPress = () => {
+        setSelectedTab("region");
+        handleOpenBottomSheet();
+        setTimeout(() => {
+            if (regionContentRef.current && scrollViewRef.current) {
+                regionContentRef.current.measureLayout(
+                    scrollViewRef.current.getNativeScrollRef(),
+                    (x, y) => {
+                        scrollViewRef.current?.scrollTo({ y, animated: true });
+                    },
+                );
+            }
+        }, 100);
+    };
+
     const handleTagTabPress = () => {
         setSelectedTab("tag");
         handleOpenBottomSheet();
-        // Wait for the next frame to ensure the content is rendered
         setTimeout(() => {
-            tagContentRef.current?.measure(
-                (x, y, width, height, pageX, pageY) => {
-                    scrollViewRef.current?.scrollTo({
-                        y: pageY,
-                        animated: true,
-                    });
-                }
-            );
-        }, 0);
+            if (tagContentRef.current && scrollViewRef.current) {
+                tagContentRef.current.measureLayout(
+                    scrollViewRef.current.getNativeScrollRef(),
+                    (x, y) => {
+                        scrollViewRef.current?.scrollTo({ y, animated: true });
+                    },
+                );
+            }
+        }, 100);
     };
 
     const renderBackdrop = useCallback(
@@ -307,7 +321,7 @@ export default function HomeScreen() {
 
             {/* Filter Bar */}
             <View className="filter-container flex-row px-[20px] py-[10px] gap-[5px] items-center">
-                <Pressable onPress={handleOpenBottomSheet}>
+                <Pressable onPress={handleRegionTabPress}>
                     <View className="filter-option-region items-center px-[15px] py-[7px] gap-[5px] rounded-[15px] border border-border">
                         <AppText>지역</AppText>
                     </View>
@@ -409,37 +423,38 @@ export default function HomeScreen() {
                 enableContentPanningGesture={false}
                 enableHandlePanningGesture={true}
             >
-                <BottomSheetView className="flex-1">
-                    <BottomSheetView className="filter-tab-container border-b border-border flex-row px-[20px] gap-[10px] absolute top-0 left-0 right-0 bg-white z-10">
-                        <Pressable onPress={() => setSelectedTab("region")}>
-                            <AppText
-                                weight="semibold"
-                                className={`filter-name-region self-start text-[15px] p-[10px] ${
-                                    selectedTab === "region"
-                                        ? "border-b-2 border-black"
-                                        : "text-primary"
-                                }`}
-                            >
-                                지역
-                            </AppText>
-                        </Pressable>
-                        <Pressable onPress={handleTagTabPress}>
-                            <AppText
-                                className={`filter-name-tag self-start text-[15px] p-[10px] ${
-                                    selectedTab === "tag"
-                                        ? "border-b-2 border-black"
-                                        : "text-primary"
-                                }`}
-                            >
-                                태그
-                            </AppText>
-                        </Pressable>
-                    </BottomSheetView>
-                    <BottomSheetScrollView
-                        ref={scrollViewRef}
-                        className="filter-content-container flex-1 mt-[60px]"
-                        showsVerticalScrollIndicator={true}
-                    >
+                <BottomSheetView className="filter-tab-container border-b border-border flex-row px-[20px] gap-[10px] absolute top-0 left-0 right-0 bg-white z-10">
+                    <Pressable onPress={handleRegionTabPress}>
+                        <AppText
+                            weight="semibold"
+                            className={`filter-name-region self-start text-[15px] p-[10px] ${
+                                selectedTab === "region"
+                                    ? "border-b-2 border-black"
+                                    : "text-primary"
+                            }`}
+                        >
+                            지역
+                        </AppText>
+                    </Pressable>
+                    <Pressable onPress={handleTagTabPress}>
+                        <AppText
+                            className={`filter-name-tag self-start text-[15px] p-[10px] ${
+                                selectedTab === "tag"
+                                    ? "border-b-2 border-black"
+                                    : "text-primary"
+                            }`}
+                        >
+                            태그
+                        </AppText>
+                    </Pressable>
+                </BottomSheetView>
+                <BottomSheetScrollView
+                    ref={scrollViewRef}
+                    className="filter-content-container mt-[60px]"
+                    showsVerticalScrollIndicator={true}
+                    contentContainerStyle={{ paddingBottom: 40 }}
+                >
+                    <View ref={regionContentRef}>
                         <BottomSheetView className="region-filter-content p-[25px] gap-[15px]">
                             <AppText
                                 weight="semibold"
@@ -530,10 +545,12 @@ export default function HomeScreen() {
                                 </BottomSheetView>
                             )}
                         </BottomSheetView>
-                        <View
-                            className="tag-filter-content p-[25px] gap-[15px] mt-[20px]"
-                            ref={tagContentRef}
-                        >
+                    </View>
+                    <View
+                        className="tag-filter-content-wrapper"
+                        ref={tagContentRef}
+                    >
+                        <BottomSheetView className="tag-filter-content p-[25px] gap-[15px] mt-[20px]">
                             <AppText
                                 weight="semibold"
                                 className="filter-title text-[17px] px-[5px]"
@@ -573,30 +590,30 @@ export default function HomeScreen() {
                                     </Pressable>
                                 ))}
                             </BottomSheetView>
-                        </View>
-                    </BottomSheetScrollView>
-                    <View className="bg-white absolute bottom-0 left-0 right-0 p-[20px] flex-row gap-[10px]">
-                        <Pressable
-                            className="bg-white py-[15px] px-[40px] border border-border rounded-[7px] items-center"
-                            onPress={handleCloseBottomSheet}
-                        >
-                            <AppText className="text-[14px]" weight="semibold">
-                                닫기
-                            </AppText>
-                        </Pressable>
-                        <Pressable
-                            className="flex-1 py-[15px] rounded-[7px] items-center bg-primary"
-                            onPress={handleShowResults}
-                        >
-                            <AppText
-                                className="text-white text-[14px]"
-                                weight="semibold"
-                            >
-                                결과보기
-                            </AppText>
-                        </Pressable>
+                        </BottomSheetView>
                     </View>
-                </BottomSheetView>
+                </BottomSheetScrollView>
+                <View className="bg-white p-[20px] flex-row gap-[10px]">
+                    <Pressable
+                        className="bg-white py-[15px] px-[40px] border border-border rounded-[7px] items-center"
+                        onPress={handleCloseBottomSheet}
+                    >
+                        <AppText className="text-[14px]" weight="semibold">
+                            닫기
+                        </AppText>
+                    </Pressable>
+                    <Pressable
+                        className="flex-1 py-[15px] rounded-[7px] items-center bg-primary"
+                        onPress={handleShowResults}
+                    >
+                        <AppText
+                            className="text-white text-[14px]"
+                            weight="semibold"
+                        >
+                            결과보기
+                        </AppText>
+                    </Pressable>
+                </View>
             </BottomSheet>
         </View>
     );
