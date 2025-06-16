@@ -24,7 +24,10 @@ export default function AppText({
     return (
         <Text
             className={className}
-            style={[{ fontWeight: weightMap[weight] }, style]}
+            style={[
+                { fontFamily: "Pretendard", fontWeight: weightMap[weight] },
+                style,
+            ]}
             {...props}
         >
             {children}
