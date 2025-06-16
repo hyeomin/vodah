@@ -3,6 +3,7 @@ import { Text, TextProps, TextStyle } from "react-native";
 
 interface AppTextProps extends TextProps {
     weight?: "regular" | "bold" | "semibold";
+    fontFamily?: string;
 }
 
 const weightMap: Record<
@@ -17,6 +18,7 @@ const weightMap: Record<
 export default function AppText({
     children,
     weight = "regular",
+    fontFamily = "Pretendard",
     className,
     style,
     ...props
@@ -24,7 +26,7 @@ export default function AppText({
     return (
         <Text
             className={className}
-            style={[{ fontWeight: weightMap[weight] }, style]}
+            style={[{ fontFamily, fontWeight: weightMap[weight] }, style]}
             {...props}
         >
             {children}
