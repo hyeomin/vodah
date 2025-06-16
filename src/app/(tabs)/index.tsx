@@ -347,8 +347,8 @@ export default function HomeScreen() {
                 </View>
             ) : filteredYogaClasses.length === 0 ? (
                 <>
-                    <View className="flex-1 justify-center items-center py-[10px] gap-[30px] w-full pb-[260px]">
-                        <AppText className="text-[14px] text-center">
+                    <View className="flex-1 justify-center items-center pb-[260px]">
+                        <AppText className="text-center leading-[20px]">
                             {
                                 "죄송합니다. 해당하는 결과가 없습니다.\n얼른 더 많은 수업을 준비할게요!\n\n그전까지 다른 날짜 혹은 다른 수업을 알아봐주세요."
                             }

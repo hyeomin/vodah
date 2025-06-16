@@ -37,7 +37,10 @@ export default function Footer() {
                     주소
                 </AppText>
             </View>
-            <AppText className="font-['Poppins'] text-[20px] leading-[30px] text-black">
+            <AppText
+                fontFamily="Poppins"
+                className="text-[20px] leading-[30px] text-black"
+            >
                 moment
             </AppText>
         </View>
