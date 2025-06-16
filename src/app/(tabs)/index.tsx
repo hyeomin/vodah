@@ -14,12 +14,7 @@ import BottomSheet, {
     BottomSheetView,
 } from "@gorhom/bottom-sheet";
 import React, { useCallback, useMemo, useRef, useState } from "react";
-import {
-    ActivityIndicator,
-    FlatList,
-    Pressable,
-    View,
-} from "react-native";
+import { ActivityIndicator, FlatList, Pressable, View } from "react-native";
 
 export default function HomeScreen() {
     const [selectedDay, setSelectedDay] = useState<number | null>(null);
@@ -217,7 +212,7 @@ export default function HomeScreen() {
                     scrollViewRef.current.getNativeScrollRef(),
                     (x, y) => {
                         scrollViewRef.current?.scrollTo({ y, animated: true });
-                    },
+                    }
                 );
             }
         }, 100);
@@ -232,7 +227,7 @@ export default function HomeScreen() {
                     scrollViewRef.current.getNativeScrollRef(),
                     (x, y) => {
                         scrollViewRef.current?.scrollTo({ y, animated: true });
-                    },
+                    }
                 );
             }
         }, 100);
@@ -350,43 +345,20 @@ export default function HomeScreen() {
                         Error loading classes
                     </AppText>
                 </View>
-            ) :filteredYogaClasses.length === 0 ? (
+            ) : filteredYogaClasses.length === 0 ? (
                 <>
-                    <View
-                        style={{
-                            flex: 1,
-                            justifyContent: "center",
-                            alignItems: "center",
-                            paddingVertical: 10,
-                            gap: 30,
-                            width: "100%",
-                            paddingBottom: 260,
-                        }}
-                    >
-                    <AppText
-                        style={{
-                            fontFamily: "Pretendard",
-                            fontWeight: "400",
-                            fontSize: 14,
-                            lineHeight: 17,
-                            textAlign: "center",
-                            letterSpacing: 0.001,
-                            color: "#000",
-                        }}
-                    >
-                        {"죄송합니다. 해당하는 결과가 없습니다.\n얼른 더 많은 수업을 준비할게요!\n\n그전까지 다른 날짜 혹은 다른 수업을 알아봐주세요."}
-                    </AppText>
+                    <View className="flex-1 justify-center items-center py-[10px] gap-[30px] w-full pb-[260px]">
+                        <AppText className="text-[14px] text-center">
+                            {
+                                "죄송합니다. 해당하는 결과가 없습니다.\n얼른 더 많은 수업을 준비할게요!\n\n그전까지 다른 날짜 혹은 다른 수업을 알아봐주세요."
+                            }
+                        </AppText>
                     </View>
-                    <View style={{
-                        position: "absolute",
-                        left: 0,
-                        right: 0,
-                        bottom: 0,
-                    }}>
+                    <View className="absolute left-0 right-0 bottom-0">
                         <Footer />
                     </View>
                 </>
-              ) : (
+            ) : (
                 <FlatList
                     data={filteredYogaClasses}
                     renderItem={({ item }) => (
