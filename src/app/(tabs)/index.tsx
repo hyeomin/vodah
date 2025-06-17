@@ -733,7 +733,13 @@ export default function HomeScreen() {
                                     if (!day) {
                                         return <View key={colIdx} className="w-[40px] h-[52px]" />;
                                     }
-                                    const isAvailable = availableDatesSet.has(day.getDate());
+                                    const isAvailable = (() => {
+                                        const today = new Date();
+                                        today.setHours(0,0,0,0);
+                                        const thisDay = new Date(day);
+                                        thisDay.setHours(0,0,0,0);
+                                        return availableDatesSet.has(day.getDate()) && thisDay >= today;
+                                    })();
                                     const isSelected = tempSelectedDates.some(d =>
                                         d.getFullYear() === day.getFullYear() &&
                                         d.getMonth() === day.getMonth() &&
