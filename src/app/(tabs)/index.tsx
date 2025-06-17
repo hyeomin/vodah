@@ -14,11 +14,13 @@ import BottomSheet, {
     BottomSheetView,
 } from "@gorhom/bottom-sheet";
 import React, { useCallback, useMemo, useRef, useState } from "react";
-import { ActivityIndicator, FlatList, Pressable, View } from "react-native";
+import { ActivityIndicator, FlatList, Pressable, View, Text } from "react-native";
+import Modal from 'react-native-modal';
 
 export default function HomeScreen() {
-    const [selectedDay, setSelectedDay] = useState<number | null>(null);
-    const [selectedDateInfo, setSelectedDateInfo] = useState<Date | null>(null);
+    const [selectedDates, setSelectedDates] = useState<Date[]>([]);
+    const [currentMonth, setCurrentMonth] = useState<number>(new Date().getMonth());
+    const [currentYear, setCurrentYear] = useState<number>(new Date().getFullYear());
     const [selectedTab, setSelectedTab] = useState<"region" | "tag">("region");
     const [selectedCity, setSelectedCity] = useState<string | null>("");
     const [selectedDistricts, setSelectedDistricts] = useState<string[]>([]);
@@ -30,6 +32,10 @@ export default function HomeScreen() {
         useState<string[]>(selectedDistricts);
     const [tempSelectedTags, setTempSelectedTags] =
         useState<string[]>(selectedTags);
+    const [calendarVisible, setCalendarVisible] = useState(false);
+    const [tempSelectedDates, setTempSelectedDates] = useState<Date[]>([]);
+    const [calendarMonth, setCalendarMonth] = useState(new Date().getMonth());
+    const [calendarYear, setCalendarYear] = useState(new Date().getFullYear());
 
     const { data: yogaClasses, loading, error } = useYogaClasses();
     const { data: timeSlots = [], loading: loadingSlots } = useTimeSlots();
@@ -93,96 +99,18 @@ export default function HomeScreen() {
                 label: dayLabels[date.getDay()],
                 date: date.getDate(),
                 fullDate: date,
-                selected: selectedDay === date.getDate(),
+                selected: selectedDates.some(
+                    d => d.getFullYear() === date.getFullYear() &&
+                         d.getMonth() === date.getMonth() &&
+                         d.getDate() === date.getDate()
+                ),
                 isToday: i === 0,
                 weekend: date.getDay() === 0 || date.getDay() === 6,
             });
         }
 
         return dates;
-    }, [selectedDay]);
-
-    // Get the display date (today if no day selected, otherwise the selected day's date)
-    const displayDate = useMemo(() => {
-        if (selectedDateInfo) return selectedDateInfo;
-        return new Date();
-    }, [selectedDateInfo]);
-
-    // Helper function to find minimum price for a class
-    const getMinPriceForClass = (classId: string): number => {
-        const classTimeSlots = enrichedTimeSlots.filter(
-            (slot) => slot.classId === classId && !slot.isFull
-        );
-        if (classTimeSlots.length === 0) return 0;
-        return Math.min(...classTimeSlots.map((slot) => slot.price));
-    };
-
-    // Filter yoga classes based on selected date
-    const filteredYogaClasses = useMemo(() => {
-        if (!yogaClasses) return [];
-
-        const now = new Date();
-
-        const classIdToNextSlotTime = new Map<string, number>();
-        enrichedTimeSlots.forEach((slot) => {
-            if (slot.startTime > now) {
-                const prev = classIdToNextSlotTime.get(slot.classId);
-                if (!prev || slot.startTime.getTime() < prev) {
-                    classIdToNextSlotTime.set(
-                        slot.classId,
-                        slot.startTime.getTime()
-                    );
-                }
-            }
-        });
-
-        // First filter out classes that only have time slots in the past
-        const classesWithFutureSlots = yogaClasses
-            .filter((yogaClass) => classIdToNextSlotTime.has(yogaClass.id))
-            .sort(
-                (a, b) =>
-                    (classIdToNextSlotTime.get(a.id) ?? Infinity) -
-                    (classIdToNextSlotTime.get(b.id) ?? Infinity)
-            );
-
-        const classWithMatchingDate = selectedDay
-            ? classesWithFutureSlots.filter((yogaClass) => {
-                  const hasMatchingTimeSlot = enrichedTimeSlots.some(
-                      (slot) =>
-                          slot.classId === yogaClass.id &&
-                          new Date(slot.startTime).getDate() === selectedDay &&
-                          slot.startTime > now
-                  );
-                  return hasMatchingTimeSlot;
-              })
-            : classesWithFutureSlots;
-
-        const classWithMatchingCity = selectedCity
-            ? classWithMatchingDate.filter((yogaClass) => {
-                  return yogaClass.location?.city === selectedCity;
-              })
-            : classWithMatchingDate;
-
-        const classWithMatchingDistrict =
-            selectedDistricts.length === 0
-                ? classWithMatchingCity
-                : classWithMatchingCity.filter((yogaClass) => {
-                      return selectedDistricts.includes(
-                          yogaClass.location?.gu ?? ""
-                      );
-                  });
-
-        const classWithMatchingTag =
-            selectedTags.length === 0
-                ? classWithMatchingDistrict
-                : classWithMatchingDistrict.filter((yogaClass) => {
-                      return yogaClass.tagIds.some((tagId) =>
-                          selectedTags.includes(tagId)
-                      );
-                  });
-
-        return classWithMatchingTag;
-    }, [selectedDay, yogaClasses, enrichedTimeSlots]);
+    }, [selectedDates]);
 
     const snapPoints = useMemo(() => ["25%", "75%"], []);
     const bottomSheetRef = useRef<BottomSheet>(null);
@@ -248,24 +176,171 @@ export default function HomeScreen() {
         setSelectedCity(null);
         setSelectedDistricts([]);
         setSelectedTags([]);
-        setSelectedDateInfo(null);
-        setSelectedDay(null);
+        setSelectedDates([]);
     };
 
     const isAnyLoading = loading || loadingSlots || loadingRes || loadingTags;
+
+    const onViewableItemsChanged = useRef(({
+        viewableItems
+    }: { viewableItems: Array<{ item: { fullDate: Date } }> }) => {
+        if (viewableItems.length > 0) {
+            const firstDate = viewableItems[0].item.fullDate;
+            setCurrentMonth(firstDate.getMonth());
+            setCurrentYear(firstDate.getFullYear());
+        }
+    }).current;
+
+    const filteredYogaClasses = useMemo(() => {
+        if (!yogaClasses) return [];
+
+        const now = new Date();
+
+        const classIdToNextSlotTime = new Map<string, number>();
+        enrichedTimeSlots.forEach((slot) => {
+            if (slot.startTime > now) {
+                const prev = classIdToNextSlotTime.get(slot.classId);
+                if (!prev || slot.startTime.getTime() < prev) {
+                    classIdToNextSlotTime.set(
+                        slot.classId,
+                        slot.startTime.getTime()
+                    );
+                }
+            }
+        });
+
+        // First filter out classes that only have time slots in the past
+        const classesWithFutureSlots = yogaClasses
+            .filter((yogaClass) => classIdToNextSlotTime.has(yogaClass.id))
+            .sort(
+                (a, b) =>
+                    (classIdToNextSlotTime.get(a.id) ?? Infinity) -
+                    (classIdToNextSlotTime.get(b.id) ?? Infinity)
+            );
+
+        const classWithMatchingDate = selectedDates.length > 0
+            ? classesWithFutureSlots.filter((yogaClass) => {
+                const hasMatchingTimeSlot = enrichedTimeSlots.some(
+                    (slot) =>
+                        slot.classId === yogaClass.id &&
+                        selectedDates.some(
+                            d =>
+                                d.getFullYear() === slot.startTime.getFullYear() &&
+                                d.getMonth() === slot.startTime.getMonth() &&
+                                d.getDate() === slot.startTime.getDate()
+                        ) &&
+                        slot.startTime > now
+                );
+                return hasMatchingTimeSlot;
+            })
+            : classesWithFutureSlots;
+
+        const classWithMatchingCity = selectedCity
+            ? classWithMatchingDate.filter((yogaClass) => {
+                  return yogaClass.location?.city === selectedCity;
+              })
+            : classWithMatchingDate;
+
+        const classWithMatchingDistrict =
+            selectedDistricts.length === 0
+                ? classWithMatchingCity
+                : classWithMatchingCity.filter((yogaClass) => {
+                      return selectedDistricts.includes(
+                          yogaClass.location?.gu ?? ""
+                      );
+                  });
+
+        const classWithMatchingTag =
+            selectedTags.length === 0
+                ? classWithMatchingDistrict
+                : classWithMatchingDistrict.filter((yogaClass) => {
+                      return yogaClass.tagIds.some((tagId) =>
+                          selectedTags.includes(tagId)
+                      );
+                  });
+
+        return classWithMatchingTag;
+    }, [selectedDates, yogaClasses, enrichedTimeSlots, selectedCity, selectedDistricts, selectedTags]);
+
+    // Helper function to find minimum price for a class
+    const getMinPriceForClass = (classId: string): number => {
+        const classTimeSlots = enrichedTimeSlots.filter(
+            (slot) => slot.classId === classId && !slot.isFull
+        );
+        if (classTimeSlots.length === 0) return 0;
+        return Math.min(...classTimeSlots.map((slot) => slot.price));
+    };
+
+    const openCalendar = () => {
+        setTempSelectedDates(selectedDates);
+        setCalendarVisible(true);
+    };
+    const closeCalendar = () => setCalendarVisible(false);
+    const applyCalendar = () => {
+        setSelectedDates(tempSelectedDates);
+        setCalendarVisible(false);
+    };
+
+    const calendarRows = useMemo(() => {
+        const daysInMonth = new Date(calendarYear, calendarMonth + 1, 0).getDate();
+        const firstDay = new Date(calendarYear, calendarMonth, 1).getDay();
+        const rows = [];
+        let row = [];
+
+        for (let i = 0; i < firstDay; i++) {
+            row.push(null);
+        }
+
+        for (let day = 1; day <= daysInMonth; day++) {
+            row.push(new Date(calendarYear, calendarMonth, day));
+            if ((firstDay + day) % 7 === 0) {
+                rows.push(row);
+                row = [];
+            }
+        }
+
+        while (row.length < 7) {
+            row.push(null);
+        }
+        rows.push(row);
+
+        return rows;
+    }, [calendarYear, calendarMonth]);
+
+    // 요일 헤더 부분 수정
+    <View className="flex-row justify-center items-center gap-x-1 mb-3">
+        {["일", "월", "화", "수", "목", "금", "토"].map((d, i) => (
+            <Text key={d} className="font-bold text-[14px] leading-[17px] text-gray-400 w-[36px] text-center">
+                {d}
+            </Text>
+        ))}
+    </View>
+
+    // 달력 날짜 그리드에서 실제로 수업이 있는 날짜만 enable
+    const availableDatesSet = useMemo(() => {
+        return new Set(
+            enrichedTimeSlots
+                .filter(slot =>
+                    slot.startTime.getFullYear() === calendarYear &&
+                    slot.startTime.getMonth() === calendarMonth
+                )
+                .map(slot => slot.startTime.getDate())
+        );
+    }, [enrichedTimeSlots, calendarYear, calendarMonth]);
 
     return (
         <View className="container bg-background flex-1">
             {/* <Link href="/login">Login</Link> */}
             {/* Date Picker */}
             <View className="date-picker-container">
-                <Pressable className="date-picker-header py-[15px] flex-row justify-center items-center gap-[3px] self-stretch">
+                <Pressable
+                    className="date-picker-header py-[15px] flex-row justify-center items-center gap-[3px] self-stretch"
+                    onPress={openCalendar}
+                >
                     <AppText weight="semibold" className="text-[17px]">
-                        {`${displayDate.getFullYear()}년 ${
-                            displayDate.getMonth() + 1
-                        }월`}
+                        {`${currentYear}년 ${currentMonth + 1}월`}
                     </AppText>
-                    {/* <DownArrowIcon />  */}
+                    <SvgIcons.DownArrowIcon />
                 </Pressable>
                 <FlatList
                     data={days}
@@ -278,17 +353,30 @@ export default function HomeScreen() {
                     renderItem={({ item: day }) => (
                         <Pressable
                             onPress={() => {
-                                if (selectedDay === day.date) {
-                                    setSelectedDay(null);
-                                    setSelectedDateInfo(null);
+                                const alreadySelected = selectedDates.some(
+                                    d => d.getFullYear() === day.fullDate.getFullYear() &&
+                                         d.getMonth() === day.fullDate.getMonth() &&
+                                         d.getDate() === day.fullDate.getDate()
+                                );
+                                if (alreadySelected) {
+                                    setSelectedDates(selectedDates.filter(
+                                        d => !(d.getFullYear() === day.fullDate.getFullYear() &&
+                                               d.getMonth() === day.fullDate.getMonth() &&
+                                               d.getDate() === day.fullDate.getDate())
+                                    ));
                                 } else {
-                                    setSelectedDay(day.date);
-                                    setSelectedDateInfo(day.fullDate);
+                                    setSelectedDates([...selectedDates, day.fullDate]);
                                 }
                             }}
                             className="one-day-container items-center gap-[6px] mx-[10px]"
                         >
-                            <AppText>{day.label}</AppText>
+                            <AppText
+                                className={
+                                    day.weekend ? "text-red-500" : undefined
+                                }
+                            >
+                                {day.label}
+                            </AppText>
                             <View
                                 className={`date-container w-[40px] h-[40px] flex-col justify-center items-center rounded-full ${
                                     day.selected ? "bg-primary" : ""
@@ -300,7 +388,7 @@ export default function HomeScreen() {
                                     }
                                     className={`text-[16px] tracking-[0.016px] ${
                                         day.selected ? "text-white" : ""
-                                    }`}
+                                    }${day.weekend ? " text-red-500" : ""}`}
                                 >
                                     {day.date}
                                 </AppText>
@@ -310,7 +398,9 @@ export default function HomeScreen() {
                             )}
                         </Pressable>
                     )}
-                    keyExtractor={(day) => `${day.label}-${day.date}`}
+                    keyExtractor={(day) => `${day.label}-${day.fullDate.toISOString()}`}
+                    onViewableItemsChanged={onViewableItemsChanged}
+                    viewabilityConfig={{ itemVisiblePercentThreshold: 50 }}
                 />
             </View>
 
@@ -587,6 +677,128 @@ export default function HomeScreen() {
                     </Pressable>
                 </View>
             </BottomSheet>
+            <Modal
+                isVisible={calendarVisible}
+                onBackdropPress={closeCalendar}
+                style={{ justifyContent: 'flex-end', margin: 0 }}
+                backdropOpacity={0.3}
+                animationIn="slideInUp"
+                animationOut="slideOutDown"
+            >
+                <View className="bg-[#F9F8F5] rounded-t-[10px] pt-10 pb-10 px-0 items-center">
+                    {/* 상단 핸들 */}
+                    <View className="w-[30px] h-[4px] bg-gray-400 rounded-full self-center mb-6" />
+
+                    {/* 월/연도 & 화살표 */}
+                    <View className="flex-row items-center justify-center gap-x-[30px] mb-7">
+                        <Pressable onPress={() => {
+                            // 이전 달로 이동
+                            const prevMonth = new Date(calendarYear, calendarMonth - 1, 1);
+                            setCalendarYear(prevMonth.getFullYear());
+                            setCalendarMonth(prevMonth.getMonth());
+                        }}>
+                            <View style={{ transform: [{ rotate: '90deg' }] }}>
+                                <SvgIcons.DownArrowIcon />
+                            </View>
+                        </Pressable>
+                        <Text className="font-bold text-[16px] leading-[19px] text-black mx-[15px]">
+                            {`${calendarYear}년 ${calendarMonth + 1}월`}
+                        </Text>
+                        <Pressable onPress={() => {
+                            // 다음 달로 이동
+                            const nextMonth = new Date(calendarYear, calendarMonth + 1, 1);
+                            setCalendarYear(nextMonth.getFullYear());
+                            setCalendarMonth(nextMonth.getMonth());
+                        }}>
+                            <View style={{ transform: [{ rotate: '-90deg' }] }}>
+                                <SvgIcons.DownArrowIcon />
+                            </View>
+                        </Pressable>
+                    </View>
+
+                    {/* 요일 헤더 */}
+                    <View className="flex-row justify-center items-center gap-x-[6px] mb-5">
+                        {["일", "월", "화", "수", "목", "금", "토"].map((d, i) => (
+                            <Text key={d} className="font-bold text-[14px] leading-[17px] text-gray-400 w-[40px] text-center">
+                                {d}
+                            </Text>
+                        ))}
+                    </View>
+
+                    {/* 날짜 그리드 */}
+                    <View className="flex-col items-center gap-y-[5px]">
+                        {calendarRows.map((week, rowIdx) => (
+                            <View key={rowIdx} className="flex-row justify-center items-start gap-x-[6px]">
+                                {week.map((day, colIdx) => {
+                                    if (!day) {
+                                        return <View key={colIdx} className="w-[40px] h-[52px]" />;
+                                    }
+                                    const isAvailable = availableDatesSet.has(day.getDate());
+                                    const isSelected = tempSelectedDates.some(d =>
+                                        d.getFullYear() === day.getFullYear() &&
+                                        d.getMonth() === day.getMonth() &&
+                                        d.getDate() === day.getDate()
+                                    );
+                                    const isToday = (() => {
+                                        const now = new Date();
+                                        return now.getFullYear() === day.getFullYear() &&
+                                            now.getMonth() === day.getMonth() &&
+                                            now.getDate() === day.getDate();
+                                    })();
+                                    const isWeekend = day.getDay() === 0 || day.getDay() === 6;
+                                    return (
+                                        <Pressable
+                                            key={colIdx}
+                                            className="flex-col items-center gap-[6px] w-[40px] h-[52px]"
+                                            onPress={() => {
+                                                if (!isAvailable) return;
+                                                const alreadySelected = tempSelectedDates.some(
+                                                    d => d.getFullYear() === day.getFullYear() &&
+                                                        d.getMonth() === day.getMonth() &&
+                                                        d.getDate() === day.getDate()
+                                                );
+                                                if (alreadySelected) {
+                                                    setTempSelectedDates(tempSelectedDates.filter(
+                                                        d => !(d.getFullYear() === day.getFullYear() &&
+                                                            d.getMonth() === day.getMonth() &&
+                                                            d.getDate() === day.getDate())
+                                                    ));
+                                                } else {
+                                                    setTempSelectedDates([...tempSelectedDates, day]);
+                                                }
+                                            }}
+                                            disabled={!isAvailable}
+                                        >
+                                            <View className={`w-[40px] h-[40px] rounded-full flex items-center justify-center ${isSelected ? 'bg-[#8889BD]' : ''}`}> 
+                                                <Text className={`font-semibold text-[16px] ${isSelected ? 'text-white' : isAvailable ? (isWeekend ? 'text-red-500' : 'text-black') : 'text-gray-300'}`}>
+                                                    {day.getDate()}
+                                                </Text>
+                                            </View>
+                                            {isToday && isAvailable && <View className="w-[6px] h-[6px] bg-[#5F60A2] rounded-full" />}
+                                        </Pressable>
+                                    );
+                                })}
+                            </View>
+                        ))}
+                    </View>
+
+                    {/* 하단 버튼 */}
+                    <View className="flex-row gap-3 mt-6 px-5">
+                        <Pressable
+                            className="flex-1 py-3 rounded-lg items-center border border-gray-300 bg-white"
+                            onPress={closeCalendar}
+                        >
+                            <AppText className="text-gray-700" weight="semibold">닫기</AppText>
+                        </Pressable>
+                        <Pressable
+                            className="flex-1 py-3 rounded-lg items-center bg-primary"
+                            onPress={applyCalendar}
+                        >
+                            <AppText className="text-white" weight="semibold">적용하기</AppText>
+                        </Pressable>
+                    </View>
+                </View>
+            </Modal>
         </View>
     );
 }
