@@ -783,18 +783,18 @@ export default function HomeScreen() {
                     </View>
 
                     {/* 하단 버튼 */}
-                    <View className="flex-row gap-3 mt-6 px-5">
+                    <View className="flex-row items-center gap-[10px] w-[362px] mx-auto mt-6">
                         <Pressable
-                            className="flex-1 py-3 rounded-lg items-center border border-gray-300 bg-white"
+                            className="w-[85px] h-[45px] flex-row justify-center items-center border border-[#E0E0E0] rounded-[7px]"
                             onPress={closeCalendar}
                         >
-                            <AppText className="text-gray-700" weight="semibold">닫기</AppText>
+                            <Text className="font-bold text-[14px] text-black">닫기</Text>
                         </Pressable>
                         <Pressable
-                            className="flex-1 py-3 rounded-lg items-center bg-primary"
+                            className="flex-1 h-[45px] flex-row justify-center items-center bg-[#8889BD] rounded-[7px]"
                             onPress={applyCalendar}
                         >
-                            <AppText className="text-white" weight="semibold">적용하기</AppText>
+                            <Text className="font-bold text-[14px] text-white">결과보기</Text>
                         </Pressable>
                     </View>
                 </View>
