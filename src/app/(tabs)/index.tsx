@@ -7,6 +7,7 @@ import { useSupabase } from "@/hooks/useSupabase";
 import { useTimeSlots } from "@/hooks/useTimeSlots";
 import { useYogaClasses } from "@/hooks/useYogaClasses";
 import { enrichTimeSlots } from "@/utils/transformers";
+import { useRouter } from "expo-router";
 import BottomSheet, {
     BottomSheetBackdrop,
     BottomSheetHandle,
@@ -41,6 +42,7 @@ export default function HomeScreen() {
     const { data: timeSlots = [], loading: loadingSlots } = useTimeSlots();
     const { data: reservations = [], loading: loadingRes } = useReservations();
 
+    const router = useRouter();
     const enrichedTimeSlots = useMemo(
         () => enrichTimeSlots(timeSlots, reservations),
         [timeSlots, reservations]
@@ -330,79 +332,86 @@ export default function HomeScreen() {
 
     return (
         <View className="container bg-background flex-1">
-            {/* <Link href="/login">Login</Link> */}
             {/* Date Picker */}
-            <View className="date-picker-container">
-                <Pressable
-                    className="date-picker-header py-[15px] flex-row justify-center items-center gap-[3px] self-stretch"
-                    onPress={openCalendar}
-                >
-                    <AppText weight="semibold" className="text-[17px]">
-                        {`${currentYear}년 ${currentMonth + 1}월`}
-                    </AppText>
-                    <SvgIcons.DownArrowIcon />
-                </Pressable>
-                <FlatList
-                    data={days}
-                    horizontal
-                    showsHorizontalScrollIndicator={false}
-                    contentContainerStyle={{
-                        paddingHorizontal: 10,
-                        paddingVertical: 10,
-                    }}
-                    renderItem={({ item: day }) => (
-                        <Pressable
-                            onPress={() => {
-                                const alreadySelected = selectedDates.some(
-                                    d => d.getFullYear() === day.fullDate.getFullYear() &&
-                                         d.getMonth() === day.fullDate.getMonth() &&
-                                         d.getDate() === day.fullDate.getDate()
-                                );
-                                if (alreadySelected) {
-                                    setSelectedDates(selectedDates.filter(
-                                        d => !(d.getFullYear() === day.fullDate.getFullYear() &&
-                                               d.getMonth() === day.fullDate.getMonth() &&
-                                               d.getDate() === day.fullDate.getDate())
-                                    ));
-                                } else {
-                                    setSelectedDates([...selectedDates, day.fullDate]);
-                                }
-                            }}
-                            className="one-day-container items-center gap-[6px] mx-[10px]"
+            <View className="relative w-full">
+                <View className="flex-row justify-center items-center py-[15px] gap-[3px] w-full">
+                    <Pressable
+                        className="flex-row justify-center items-center gap-[3px]"
+                        onPress={openCalendar}
+                    >
+                        <AppText weight="semibold" className="text-[17px]">
+                            {`${currentYear}년 ${currentMonth + 1}월`}
+                        </AppText>
+                        <SvgIcons.DownArrowIcon />
+                    </Pressable>
+                </View>
+            </View>
+            <Pressable
+                className="absolute right-[10px] top-[10px] w-[56px] h-[29px] bg-[#8889BD] rounded-[7px] flex-row justify-center items-center z-10"
+                onPress={() => { router.push('/login'); }}
+            >
+                <Text className="text-white text-[13px] font-medium" style={{ fontFamily: 'Roboto' }}>로그인</Text>
+            </Pressable>
+            <FlatList
+                data={days}
+                horizontal
+                showsHorizontalScrollIndicator={false}
+                contentContainerStyle={{
+                    paddingHorizontal: 10,
+                    paddingVertical: 10,
+                }}
+                renderItem={({ item: day }) => (
+                    <Pressable
+                        onPress={() => {
+                            const alreadySelected = selectedDates.some(
+                                d => d.getFullYear() === day.fullDate.getFullYear() &&
+                                     d.getMonth() === day.fullDate.getMonth() &&
+                                     d.getDate() === day.fullDate.getDate()
+                            );
+                            if (alreadySelected) {
+                                setSelectedDates(selectedDates.filter(
+                                    d => !(d.getFullYear() === day.fullDate.getFullYear() &&
+                                           d.getMonth() === day.fullDate.getMonth() &&
+                                           d.getDate() === day.fullDate.getDate())
+                                ));
+                            } else {
+                                setSelectedDates([...selectedDates, day.fullDate]);
+                            }
+                        }}
+                        className="one-day-container items-center gap-[6px] mx-[10px]"
+                    >
+                        <AppText
+                            className={
+                                day.weekend ? "text-red-500" : undefined
+                            }
+                        >
+                            {day.label}
+                        </AppText>
+                        <View
+                            className={`date-container w-[40px] h-[40px] flex-col justify-center items-center rounded-full ${
+                                day.selected ? "bg-primary" : ""
+                            }`}
                         >
                             <AppText
-                                className={
-                                    day.weekend ? "text-red-500" : undefined
+                                weight={
+                                    day.selected ? "semibold" : "regular"
                                 }
+                                className={`text-[16px] tracking-[0.016px] ${
+                                    day.selected ? "text-white" : ""
+                                }${day.weekend ? " text-red-500" : ""}`}
                             >
-                                {day.label}
+                                {day.date}
                             </AppText>
-                            <View
-                                className={`date-container w-[40px] h-[40px] flex-col justify-center items-center rounded-full ${
-                                    day.selected ? "bg-primary" : ""
-                                }`}
-                            >
-                                <AppText
-                                    weight={
-                                        day.selected ? "semibold" : "regular"
-                                    }
-                                    className={`text-[16px] tracking-[0.016px] ${
-                                        day.selected ? "text-white" : ""
-                                    }${day.weekend ? " text-red-500" : ""}`}
-                                >
-                                    {day.date}
-                                </AppText>
-                            </View>
-                            {day.isToday && (
-                                <View className="dot h-[6px] w-[6px] bg-accent rounded-full"></View>
-                            )}
-                        </Pressable>
-                    )}
-                    keyExtractor={(day) => `${day.label}-${day.fullDate.toISOString()}`}
-                    onViewableItemsChanged={onViewableItemsChanged}
-                    viewabilityConfig={{ itemVisiblePercentThreshold: 50 }}
-                />
-            </View>
+                        </View>
+                        {day.isToday && (
+                            <View className="dot h-[6px] w-[6px] bg-accent rounded-full"></View>
+                        )}
+                    </Pressable>
+                )}
+                keyExtractor={(day) => `${day.label}-${day.fullDate.toISOString()}`}
+                onViewableItemsChanged={onViewableItemsChanged}
+                viewabilityConfig={{ itemVisiblePercentThreshold: 50 }}
+            />
 
             {/* Filter Bar */}
             <View className="filter-container flex-row px-[20px] py-[10px] gap-[5px] items-center">
