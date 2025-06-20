@@ -1,12 +1,26 @@
-import React from "react";
+import React, { useEffect } from "react";
 import { View, Text, Pressable, Image } from "react-native";
 import { useRouter } from "expo-router";
 import Svg, { G } from "react-native-svg";
 import { DownArrowIcon } from "@/components/icons/SvgIcons";
 import AppText from "@/components/Apptext";
+import { useAuth } from "@/contexts/AuthContext";
 
 export default function LoginScreen() {
   const router = useRouter();
+  const { user, signInWithKakao, signInWithApple, signInWithGoogle } = useAuth();
+
+  // 로그인 성공 시 이전 페이지로 돌아가거나, 돌아갈 곳이 없으면 홈으로 이동
+  useEffect(() => {
+    if (user) {
+      if (router.canGoBack()) {
+        router.back();
+      } else {
+        router.replace("/");
+      }
+    }
+  }, [user, router]);
+
   return (
     <View className="flex-1">
       <Pressable
@@ -27,7 +41,10 @@ export default function LoginScreen() {
       {/* 소셜 로그인 버튼들 */}
       <View className="w-full flex flex-col items-center gap-[15px]">
         {/* 카카오 */}
-        <Pressable className="flex-row items-center w-[325px] h-[47px] bg-[#FFEB00] rounded-[10px] border border-[#FFEB00]">
+        <Pressable 
+          className="flex-row items-center w-[325px] h-[47px] bg-[#FFEB00] rounded-[10px] border border-[#FFEB00]"
+          onPress={signInWithKakao}
+        >
           <Image
             source={require('../../../assets/icons/kakao.png')}
             className="w-[21px] h-[20px] ml-[13px] mr-[10px]"
@@ -38,7 +55,10 @@ export default function LoginScreen() {
           </AppText>
         </Pressable>
         {/* 애플 */}
-        <Pressable className="flex-row items-center w-[325px] h-[47px] bg-white border border-black rounded-[10px]">
+        <Pressable 
+          className="flex-row items-center w-[325px] h-[47px] bg-white border border-black rounded-[10px]"
+          onPress={signInWithApple}
+        >
           <Image
             source={require('../../../assets/icons/apple.png')}
             className="w-[35px] h-[35px] ml-[8px] mr-[10px]"
@@ -49,7 +69,10 @@ export default function LoginScreen() {
           </AppText>
         </Pressable>
         {/* 구글 */}
-        <Pressable className="flex-row items-center w-[325px] h-[47px] bg-white border border-[#E0E0E0] rounded-[10px]">
+        <Pressable 
+          className="flex-row items-center w-[325px] h-[47px] bg-white border border-[#E0E0E0] rounded-[10px]"
+          onPress={signInWithGoogle}
+        >
           <Image
             source={require('../../../assets/icons/google.png')}
             className="w-[25px] h-[25px] ml-[13px] mr-[10px]"

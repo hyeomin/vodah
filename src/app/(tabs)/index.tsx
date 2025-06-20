@@ -14,9 +14,10 @@ import BottomSheet, {
     BottomSheetScrollView,
     BottomSheetView,
 } from "@gorhom/bottom-sheet";
-import React, { useCallback, useMemo, useRef, useState } from "react";
+import React, { useCallback, useMemo, useRef, useState, useEffect } from "react";
 import { ActivityIndicator, FlatList, Pressable, View, Text } from "react-native";
 import Modal from 'react-native-modal';
+import { useAuth } from "@/contexts/AuthContext";
 
 export default function HomeScreen() {
     const [selectedDates, setSelectedDates] = useState<Date[]>([]);
@@ -26,13 +27,9 @@ export default function HomeScreen() {
     const [selectedCity, setSelectedCity] = useState<string | null>("");
     const [selectedDistricts, setSelectedDistricts] = useState<string[]>([]);
     const [selectedTags, setSelectedTags] = useState<string[]>([]);
-    const [tempSelectedCity, setTempSelectedCity] = useState<string | null>(
-        selectedCity
-    );
-    const [tempSelectedDistricts, setTempSelectedDistricts] =
-        useState<string[]>(selectedDistricts);
-    const [tempSelectedTags, setTempSelectedTags] =
-        useState<string[]>(selectedTags);
+    const [tempSelectedCity, setTempSelectedCity] = useState<string | null>(selectedCity);
+    const [tempSelectedDistricts, setTempSelectedDistricts] = useState<string[]>(selectedDistricts);
+    const [tempSelectedTags, setTempSelectedTags] = useState<string[]>(selectedTags);
     const [calendarVisible, setCalendarVisible] = useState(false);
     const [tempSelectedDates, setTempSelectedDates] = useState<Date[]>([]);
     const [calendarMonth, setCalendarMonth] = useState(new Date().getMonth());
@@ -41,6 +38,11 @@ export default function HomeScreen() {
     const { data: yogaClasses, loading, error } = useYogaClasses();
     const { data: timeSlots = [], loading: loadingSlots } = useTimeSlots();
     const { data: reservations = [], loading: loadingRes } = useReservations();
+    const { user, signOut, setTestMode } = useAuth();
+
+    useEffect(() => {
+        setTestMode(true);
+    }, [setTestMode]);
 
     const router = useRouter();
     const enrichedTimeSlots = useMemo(
@@ -332,147 +334,163 @@ export default function HomeScreen() {
 
     return (
         <View className="container bg-background flex-1">
-            {/* Date Picker */}
-            <View className="relative w-full">
-                <View className="flex-row justify-center items-center py-[15px] gap-[3px] w-full">
-                    <Pressable
-                        className="flex-row justify-center items-center gap-[3px]"
-                        onPress={openCalendar}
-                    >
-                        <AppText weight="semibold" className="text-[17px]">
-                            {`${currentYear}년 ${currentMonth + 1}월`}
-                        </AppText>
-                        <SvgIcons.DownArrowIcon />
-                    </Pressable>
-                </View>
-            </View>
-            <Pressable
-                className="absolute right-[10px] top-[10px] w-[56px] h-[29px] bg-[#8889BD] rounded-[7px] flex-row justify-center items-center z-10"
-                onPress={() => { router.push('/login'); }}
-            >
-                <Text className="text-white text-[13px] font-medium" style={{ fontFamily: 'Roboto' }}>로그인</Text>
-            </Pressable>
-            <FlatList
-                data={days}
-                horizontal
-                showsHorizontalScrollIndicator={false}
-                contentContainerStyle={{
-                    paddingHorizontal: 10,
-                    paddingVertical: 10,
-                }}
-                renderItem={({ item: day }) => (
-                    <Pressable
-                        onPress={() => {
-                            const alreadySelected = selectedDates.some(
-                                d => d.getFullYear() === day.fullDate.getFullYear() &&
-                                     d.getMonth() === day.fullDate.getMonth() &&
-                                     d.getDate() === day.fullDate.getDate()
-                            );
-                            if (alreadySelected) {
-                                setSelectedDates(selectedDates.filter(
-                                    d => !(d.getFullYear() === day.fullDate.getFullYear() &&
-                                           d.getMonth() === day.fullDate.getMonth() &&
-                                           d.getDate() === day.fullDate.getDate())
-                                ));
-                            } else {
-                                setSelectedDates([...selectedDates, day.fullDate]);
-                            }
-                        }}
-                        className="one-day-container items-center gap-[6px] mx-[10px]"
-                    >
-                        <AppText
-                            className={
-                                day.weekend ? "text-red-500" : undefined
-                            }
+            {/* --- Start of Fixed Header Area --- */}
+            <View>
+                {/* Date Picker */}
+                <View className="relative w-full">
+                    <View className="flex-row justify-center items-center py-[15px] gap-[3px] w-full">
+                        <Pressable
+                            className="flex-row justify-center items-center gap-[3px]"
+                            onPress={openCalendar}
                         >
-                            {day.label}
-                        </AppText>
-                        <View
-                            className={`date-container w-[40px] h-[40px] flex-col justify-center items-center rounded-full ${
-                                day.selected ? "bg-primary" : ""
-                            }`}
+                            <AppText weight="semibold" className="text-[17px]">
+                                {`${currentYear}년 ${currentMonth + 1}월`}
+                            </AppText>
+                            <SvgIcons.DownArrowIcon />
+                        </Pressable>
+                    </View>
+                </View>
+                {/* 로그인/로그아웃 버튼 */}
+                <View className="absolute right-[10px] top-[10px] z-10">
+                    {user ? (
+                        <Pressable
+                            className="w-[56px] h-[29px] bg-[#8889BD] rounded-[7px] flex-row justify-center items-center"
+                            onPress={signOut}
+                        >
+                            <AppText fontFamily="Roboto" className="text-white text-[13px] font-medium">로그아웃</AppText>
+                        </Pressable>
+                    ) : (
+                        <Pressable
+                            className="w-[56px] h-[29px] bg-[#8889BD] rounded-[7px] flex-row justify-center items-center"
+                            onPress={() => { router.push('/login'); }}
+                        >
+                            <AppText fontFamily="Roboto" className="text-white text-[13px] font-medium">로그인</AppText>
+                        </Pressable>
+                    )}
+                </View>
+                <FlatList
+                    data={days}
+                    horizontal
+                    showsHorizontalScrollIndicator={false}
+                    contentContainerStyle={{
+                        paddingHorizontal: 10,
+                        paddingVertical: 10,
+                    }}
+                    renderItem={({ item: day }) => (
+                        <Pressable
+                            onPress={() => {
+                                const alreadySelected = selectedDates.some(
+                                    d => d.getFullYear() === day.fullDate.getFullYear() &&
+                                         d.getMonth() === day.fullDate.getMonth() &&
+                                         d.getDate() === day.fullDate.getDate()
+                                );
+                                if (alreadySelected) {
+                                    setSelectedDates(selectedDates.filter(
+                                        d => !(d.getFullYear() === day.fullDate.getFullYear() &&
+                                               d.getMonth() === day.fullDate.getMonth() &&
+                                               d.getDate() === day.fullDate.getDate())
+                                    ));
+                                } else {
+                                    setSelectedDates([...selectedDates, day.fullDate]);
+                                }
+                            }}
+                            className="one-day-container items-center gap-[6px] mx-[10px]"
                         >
                             <AppText
-                                weight={
-                                    day.selected ? "semibold" : "regular"
+                                className={
+                                    day.weekend ? "text-red-500" : undefined
                                 }
-                                className={`text-[16px] tracking-[0.016px] ${
-                                    day.selected ? "text-white" : ""
-                                }${day.weekend ? " text-red-500" : ""}`}
                             >
-                                {day.date}
+                                {day.label}
                             </AppText>
+                            <View
+                                className={`date-container w-[40px] h-[40px] flex-col justify-center items-center rounded-full ${
+                                    day.selected ? "bg-primary" : ""
+                                }`}
+                            >
+                                <AppText
+                                    weight={
+                                        day.selected ? "semibold" : "regular"
+                                    }
+                                    className={`text-[16px] tracking-[0.016px] ${
+                                        day.selected ? "text-white" : ""
+                                    }${day.weekend ? " text-red-500" : ""}`}
+                                >
+                                    {day.date}
+                                </AppText>
+                            </View>
+                            {day.isToday && (
+                                <View className="dot h-[6px] w-[6px] bg-accent rounded-full"></View>
+                            )}
+                        </Pressable>
+                    )}
+                    keyExtractor={(day) => `${day.label}-${day.fullDate.toISOString()}`}
+                    onViewableItemsChanged={onViewableItemsChanged}
+                    viewabilityConfig={{ itemVisiblePercentThreshold: 50 }}
+                />
+                {/* Filter Bar */}
+                <View className="filter-container flex-row px-[20px] py-[10px] gap-[5px] items-center">
+                    <Pressable onPress={handleRegionTabPress}>
+                        <View className="filter-option-region items-center px-[15px] py-[7px] gap-[5px] rounded-[15px] border border-border">
+                            <AppText>지역</AppText>
                         </View>
-                        {day.isToday && (
-                            <View className="dot h-[6px] w-[6px] bg-accent rounded-full"></View>
-                        )}
                     </Pressable>
-                )}
-                keyExtractor={(day) => `${day.label}-${day.fullDate.toISOString()}`}
-                onViewableItemsChanged={onViewableItemsChanged}
-                viewabilityConfig={{ itemVisiblePercentThreshold: 50 }}
-            />
-
-            {/* Filter Bar */}
-            <View className="filter-container flex-row px-[20px] py-[10px] gap-[5px] items-center">
-                <Pressable onPress={handleRegionTabPress}>
-                    <View className="filter-option-region items-center px-[15px] py-[7px] gap-[5px] rounded-[15px] border border-border">
-                        <AppText>지역</AppText>
-                    </View>
-                </Pressable>
-                <Pressable onPress={handleTagTabPress}>
-                    <View className="filter-option-tag items-center px-[15px] py-[7px] gap-[5px] rounded-[15px] border border-border">
-                        <AppText>태그</AppText>
-                    </View>
-                </Pressable>
-                <Pressable onPress={handleResetFilters}>
-                    <View className="reset-filter flex-row items-center px-[15px] py-[7px] gap-[5px] rounded-[15px] border border-border">
-                        <SvgIcons.ResetIcon />
-                        <AppText>초기화</AppText>
-                    </View>
-                </Pressable>
+                    <Pressable onPress={handleTagTabPress}>
+                        <View className="filter-option-tag items-center px-[15px] py-[7px] gap-[5px] rounded-[15px] border border-border">
+                            <AppText>태그</AppText>
+                        </View>
+                    </Pressable>
+                    <Pressable onPress={handleResetFilters}>
+                        <View className="reset-filter flex-row items-center px-[15px] py-[7px] gap-[5px] rounded-[15px] border border-border">
+                            <SvgIcons.ResetIcon />
+                            <AppText>초기화</AppText>
+                        </View>
+                    </Pressable>
+                </View>
             </View>
+            {/* --- End of Fixed Header Area --- */}
 
-            {/* Card List */}
-            {isAnyLoading ? (
-                <View className="flex-1 justify-center items-center">
-                    <ActivityIndicator size="large" color="#0000ff" />
-                </View>
-            ) : error ? (
-                <View className="flex-1 justify-center items-center">
-                    <AppText className="text-red-500">
-                        Error loading classes
-                    </AppText>
-                </View>
-            ) : filteredYogaClasses.length === 0 ? (
-                <>
-                    <View className="flex-1 justify-center items-center pb-[260px]">
-                        <AppText className="text-center leading-[20px]">
-                            {
-                                "죄송합니다. 해당하는 결과가 없습니다.\n얼른 더 많은 수업을 준비할게요!\n\n그전까지 다른 날짜 혹은 다른 수업을 알아봐주세요."
-                            }
+            {/* --- Start of Scrollable Content Area --- */}
+            <View className="flex-1">
+                {isAnyLoading ? (
+                    <View className="flex-1 justify-center items-center">
+                        <ActivityIndicator size="large" color="#0000ff" />
+                    </View>
+                ) : error ? (
+                    <View className="flex-1 justify-center items-center">
+                        <AppText className="text-red-500">
+                            Error loading classes
                         </AppText>
                     </View>
-                    <View className="absolute left-0 right-0 bottom-0">
+                ) : filteredYogaClasses.length === 0 ? (
+                    <View className="flex-1">
+                        <View className="flex-1 justify-center items-center">
+                            <AppText className="text-center leading-[20px]">
+                                {
+                                    "죄송합니다. 해당하는 결과가 없습니다.\n얼른 더 많은 수업을 준비할게요!\n\n그전까지 다른 날짜 혹은 다른 수업을 알아봐주세요."
+                                }
+                            </AppText>
+                        </View>
                         <Footer />
                     </View>
-                </>
-            ) : (
-                <FlatList
-                    data={filteredYogaClasses}
-                    renderItem={({ item }) => (
-                        <YogaClassCard
-                            item={item}
-                            enrichedTimeSlots={enrichedTimeSlots}
-                            getMinPriceForClass={getMinPriceForClass}
-                        />
-                    )}
-                    keyExtractor={(item) => item.id}
-                    contentContainerStyle={{ gap: 30 }}
-                    showsVerticalScrollIndicator={false}
-                    ListFooterComponent={<Footer />}
-                />
-            )}
+                ) : (
+                    <FlatList
+                        data={filteredYogaClasses}
+                        renderItem={({ item }) => (
+                            <YogaClassCard
+                                item={item}
+                                enrichedTimeSlots={enrichedTimeSlots}
+                                getMinPriceForClass={getMinPriceForClass}
+                            />
+                        )}
+                        keyExtractor={(item) => item.id}
+                        contentContainerStyle={{ gap: 30 }}
+                        showsVerticalScrollIndicator={false}
+                        ListFooterComponent={<Footer />}
+                    />
+                )}
+            </View>
+            {/* --- End of Scrollable Content Area --- */}
             <BottomSheet
                 ref={bottomSheetRef}
                 index={-1}

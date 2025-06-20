@@ -4,6 +4,8 @@ import "../../global.css";
 import * as Font from "expo-font";
 import { useEffect } from "react";
 import { useState } from "react";
+import { AuthProvider } from "@/contexts/AuthContext";
+import { GlobalLoadingOverlay } from "@/components/GlobalLoadingOverlay";
 
 export default function RootLayout() {
     const [fontsLoaded, setFontsLoaded] = useState(false);
@@ -21,25 +23,28 @@ export default function RootLayout() {
     if (!fontsLoaded) return null;
 
     return (
-        <GestureHandlerRootView style={{ flex: 1 }}>
-            <Stack
-                screenOptions={{
-                    gestureEnabled: true,
-                    gestureDirection: "horizontal",
-                    fullScreenGestureEnabled: true,
-                }}
-            >
-                <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-                <Stack.Screen name="(auth)" options={{ headerShown: false }} />
-                <Stack.Screen
-                    name="class"
-                    options={{ headerShown: false }}
-                />
-                <Stack.Screen
-                    name="privacy-policy"
-                    options={{ headerShown: false }}
-                />
-            </Stack>
-        </GestureHandlerRootView>
+        <AuthProvider>
+            <GestureHandlerRootView style={{ flex: 1 }}>
+                <Stack
+                    screenOptions={{
+                        gestureEnabled: true,
+                        gestureDirection: "horizontal",
+                        fullScreenGestureEnabled: true,
+                    }}
+                >
+                    <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+                    <Stack.Screen name="(auth)" options={{ headerShown: false }} />
+                    <Stack.Screen
+                        name="class"
+                        options={{ headerShown: false }}
+                    />
+                    <Stack.Screen
+                        name="privacy-policy"
+                        options={{ headerShown: false }}
+                    />
+                </Stack>
+            </GestureHandlerRootView>
+            <GlobalLoadingOverlay />
+        </AuthProvider>
     );
 }
