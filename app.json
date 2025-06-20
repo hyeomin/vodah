@@ -2,7 +2,7 @@
     "expo": {
         "name": "Vodah",
         "slug": "Vodah",
-        "scheme": "vodah", // for deep linking
+        "scheme": "vodah",
         "version": "1.0.0",
         "orientation": "portrait",
         "icon": "./assets/icon.png",
@@ -21,6 +21,7 @@
                 "foregroundImage": "./assets/adaptive-icon.png",
                 "backgroundColor": "#ffffff"
             },
+            "package": "com.moment",
             "edgeToEdgeEnabled": true
         },
         "web": {

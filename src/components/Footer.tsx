@@ -1,8 +1,38 @@
 import SvgIcons from "@/components/icons/SvgIcons";
-import { Linking, Pressable, Text, View } from "react-native";
 import AppText from "./Apptext";
+import { Alert, Linking, Pressable, View, Text } from "react-native";
+import { useAuth } from "@/contexts/AuthContext";
 
 export default function Footer() {
+    const { withdraw } = useAuth();
+
+    const handleWithdrawal = () => {
+        Alert.alert(
+            "회원 탈퇴",
+            "정말 탈퇴하시겠습니까?",
+            [
+                { text: "닫기", style: "cancel" },
+                {
+                    text: "예",
+                    onPress: () => withdraw(),
+                    style: "destructive",
+                },
+            ],
+            { cancelable: true }
+        );
+    };
+
+    const handlePrivacyPolicy = () => {
+        Linking.openURL(
+            "https://www.notion.so/215b0a6b258f8084a8a5f8e60be8d939?pvs=21"
+        );
+    };
+    
+    const handleCustomerService = () => {
+        // 고객센터 링크가 정해지면 여기에 추가
+        Alert.alert("준비 중", "고객센터 페이지가 준비 중입니다.");
+    };
+
     return (
         <View className="w-full bg-[#EBEBF6] py-[30px] px-[20px] gap-[30px]">
             <View className="gap-[10px]">
@@ -36,6 +66,18 @@ export default function Footer() {
                 <AppText className="text-[12px] text-textSecondary">
                     주소
                 </AppText>
+            </View>
+            <View className="flex-row gap-[10px]">
+                <Pressable onPress={handleWithdrawal}>
+                    <AppText className="text-[12px] text-[#666666] underline">
+                        회원 탈퇴
+                    </AppText>
+                </Pressable>
+                <Pressable onPress={handlePrivacyPolicy}>
+                    <AppText weight="bold" fontFamily="Inter-Bold" className="text-[12px] text-[#666666] underline">
+                        개인정보 처리방침
+                    </AppText>
+                </Pressable>
             </View>
             <AppText
                 fontFamily="Poppins"

@@ -1,8 +1,12 @@
 import { Tabs } from "expo-router";
 import { SafeAreaView } from "react-native-safe-area-context";
 import TabIcon from "../../components/icons/TabIcon";
+import { useLoginRequired } from "@/hooks/useLoginRequired";
+import { LoginRequiredModal } from "@/components/LoginRequiredModal";
 
 export default function TabsLayout() {
+    const { isModalVisible, hideModal, checkLoginRequired } = useLoginRequired();
+
     return (
         <SafeAreaView className="flex-1 bg-primary" edges={["top"]}>
             <Tabs
@@ -40,8 +44,19 @@ export default function TabsLayout() {
                             <TabIcon color={color} size={22} name="calendar" />
                         ),
                     }}
+                    listeners={{
+                        tabPress: (e) => {
+                            if (!checkLoginRequired()) {
+                                e.preventDefault();
+                            }
+                        }
+                    }}
                 />
             </Tabs>
+            <LoginRequiredModal 
+                isVisible={isModalVisible}
+                onClose={hideModal}
+            />
         </SafeAreaView>
     );
 }
