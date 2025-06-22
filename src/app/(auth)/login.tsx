@@ -1,6 +1,6 @@
 import React, { useEffect } from "react";
-import { View, Text, Pressable, Image } from "react-native";
-import { useRouter } from "expo-router";
+import { View, Pressable, Image } from "react-native";
+import { useRouter, useLocalSearchParams } from "expo-router";
 import Svg, { G } from "react-native-svg";
 import { DownArrowIcon } from "@/components/icons/SvgIcons";
 import AppText from "@/components/Apptext";
@@ -9,17 +9,19 @@ import { useAuth } from "@/contexts/AuthContext";
 export default function LoginScreen() {
   const router = useRouter();
   const { user, signInWithKakao, signInWithApple, signInWithGoogle } = useAuth();
+  const { redirect } = useLocalSearchParams<{ redirect?: string }>();
 
   // 로그인 성공 시 이전 페이지로 돌아가거나, 돌아갈 곳이 없으면 홈으로 이동
   useEffect(() => {
     if (user) {
-      if (router.canGoBack()) {
-        router.back();
+      if (redirect || router.canGoBack()) {
+        router.back(); // TEMP: 이전 페이지로 돌아가거나, 돌아갈 곳이 없으면 홈으로 이동
+        // router.replace(redirect);
       } else {
         router.replace("/");
       }
     }
-  }, [user, router]);
+  }, [user, router, redirect]);
 
   return (
     <View className="flex-1">

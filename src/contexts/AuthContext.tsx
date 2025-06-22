@@ -1,6 +1,8 @@
 import React, { createContext, useContext, useEffect, useState } from "react";
 import { Session, User } from "@supabase/supabase-js";
 import { supabase } from "@/lib/supabase";
+import * as WebBrowser from 'expo-web-browser';
+import { makeRedirectUri } from 'expo-auth-session';
 
 // 테스트 모드 타입
 type MockUser = {
@@ -137,11 +139,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
 
     try {
-      console.log("Attempting Google sign in...");
+      const redirectTo = makeRedirectUri({
+        path: '/auth/callback',
+      });
       const { data, error } = await supabase.auth.signInWithOAuth({
         provider: 'google',
         options: {
-          redirectTo: 'moment://auth/callback',
+          redirectTo,
           queryParams: {
             access_type: 'offline',
             prompt: 'consent',
@@ -153,8 +157,45 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         console.error("Google sign in error:", error);
         return;
       }
-      
-      console.log("Google sign in response:", data);
+
+      const res = await WebBrowser.openAuthSessionAsync(data.url, redirectTo);
+
+      if (res.type === 'success') {
+        const url = res.url;
+        console.log("Google sign in response:", url);
+        // URL에서 access_token과 refresh_token을 수동으로 추출
+        const hash = url.split('#')[1];
+        if (hash) {
+          const params = hash.split('&').reduce((acc, part) => {
+            const [key, value] = part.split('=');
+            acc[decodeURIComponent(key)] = decodeURIComponent(value);
+            return acc;
+          }, {} as Record<string, string>);
+
+          const accessToken = params['access_token'];
+          const refreshToken = params['refresh_token'];
+
+          if (accessToken && refreshToken) {
+            // 수동으로 세션 설정
+            const { error } = await supabase.auth.setSession({
+              access_token: accessToken,
+              refresh_token: refreshToken,
+            });
+
+            if (error) {
+              console.error("Error setting session from URL:", error);
+            }
+          } else {
+            console.error("Could not extract tokens from redirect URL hash");
+          }
+        } else {
+          console.error("Redirect URL does not contain a hash fragment");
+        }
+      } else if (res.type === 'cancel' || res.type === 'dismiss') {
+        console.log("Google OAuth flow was cancelled or dismissed by the user.");
+      } else {
+        console.warn("Google OAuth flow failed:", res);
+      }
     } catch (error) {
       console.error("Unexpected error during Google sign in:", error);
     }

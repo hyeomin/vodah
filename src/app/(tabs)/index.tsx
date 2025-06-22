@@ -41,7 +41,7 @@ export default function HomeScreen() {
     const { user, signOut, setTestMode } = useAuth();
 
     useEffect(() => {
-        setTestMode(true);
+        setTestMode(false);
     }, [setTestMode]);
 
     const router = useRouter();
