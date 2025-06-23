@@ -3,6 +3,7 @@ import { Session, User } from "@supabase/supabase-js";
 import { supabase } from "@/lib/supabase";
 import * as WebBrowser from 'expo-web-browser';
 import { makeRedirectUri } from 'expo-auth-session';
+import * as AppleAuthentication from 'expo-apple-authentication';
 
 // 테스트 모드 타입
 type MockUser = {
@@ -113,19 +114,28 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
     try {
       console.log("Attempting Apple sign in...");
-      const { data, error } = await supabase.auth.signInWithOAuth({
-        provider: 'apple',
-        options: {
-          redirectTo: 'moment://auth/callback',
+      const credential = await AppleAuthentication.signInAsync({
+        requestedScopes: [
+          AppleAuthentication.AppleAuthenticationScope.FULL_NAME,
+          AppleAuthentication.AppleAuthenticationScope.EMAIL,
+        ],
+      })
+      // Sign in via Supabase Auth.
+      if (credential.identityToken) {
+        const {
+          error,
+          data: { user },
+        } = await supabase.auth.signInWithIdToken({
+          provider: 'apple',
+          token: credential.identityToken,
+        })
+        console.log(JSON.stringify({ error, user }, null, 2))
+        if (!error) {
+          // User is signed in.
         }
-      });
-      
-      if (error) {
-        console.error("Apple sign in error:", error);
-        return;
+      } else {
+        throw new Error('No identityToken.')
       }
-      
-      console.log("Apple sign in response:", data);
     } catch (error) {
       console.error("Unexpected error during Apple sign in:", error);
     }
