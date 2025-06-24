@@ -3,6 +3,7 @@ import FormattedTimeSlots from "@/components/FormattedTimeSlots";
 import { AddressIcon, CalendarIcon } from "@/components/icons/SvgIcons";
 import { EnrichedYogaClass } from "@/utils/transformers";
 import { useRouter } from "expo-router";
+import React from "react";
 import { Image, Pressable, View } from "react-native";
 import React from "react";
 

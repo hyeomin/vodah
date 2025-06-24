@@ -41,7 +41,8 @@ export default function ClassDetails() {
     );
     const [currentImageIndex, setCurrentImageIndex] = useState(0);
     const screenWidth = Dimensions.get("window").width;
-    const { isModalVisible, hideModal, checkLoginRequired } = useLoginRequired();
+    const { isModalVisible, hideModal, checkLoginRequired } =
+        useLoginRequired();
 
     const {
         data: yogaClasses,
@@ -123,7 +124,10 @@ export default function ClassDetails() {
                             scrollEventThrottle={16}
                         >
                             {(yogaClass.imageUrls || []).map((url, index) => (
-                                <View key={index} style={{ width: screenWidth }}>
+                                <View
+                                    key={index}
+                                    style={{ width: screenWidth }}
+                                >
                                     <Image
                                         source={{ uri: url }}
                                         className="w-full h-full"
@@ -147,7 +151,9 @@ export default function ClassDetails() {
                             <View className="flex-1">
                                 {(() => {
                                     const location =
-                                        LOCATION_DISPLAY_NAMES[yogaClass.isIndoor];
+                                        LOCATION_DISPLAY_NAMES[
+                                            yogaClass.isIndoor
+                                        ];
                                     const difficulty =
                                         DIFFICULTY_DISPLAY_NAMES[
                                             yogaClass.difficulty
@@ -179,17 +185,17 @@ export default function ClassDetails() {
                     </View>
 
                     {/* Intro-Summary */}
-                    <View className="class-header-container p-[25px] border-b border-tertiary">
+                    <View className="class-header-container py-[25px] border-b border-tertiary">
                         <View className="class-header gap-[20px]">
                             <View className="key-summary-container gap-[10px]">
-                                <View className="text-container gap-[7px]">
+                                <View className="text-container gap-[7px] px-[25px]">
                                     <AppText
                                         weight="semibold"
                                         className="title text-[22px] "
                                     >
                                         {yogaClass.title}
                                     </AppText>
-                                    <View className="meta-info-container gap-[20px]">
+                                    <View className="meta-info-container gap-[20px] ">
                                         <View className="card-meta-container flex-row items-center gap-[5px]">
                                             <View className="card-location-container flex-row items-center gap-[5px]">
                                                 <AddressIcon />
@@ -201,7 +207,9 @@ export default function ClassDetails() {
                                             <View className="card-date-container flex-row items-center gap-[5px]">
                                                 <CalendarIcon />
                                                 <FormattedTimeSlots
-                                                    timeSlots={enrichedTimeSlots}
+                                                    timeSlots={
+                                                        enrichedTimeSlots
+                                                    }
                                                     classId={yogaClass.id}
                                                     className="text-[13px] text-tertiary"
                                                 />
@@ -209,7 +217,17 @@ export default function ClassDetails() {
                                         </View>
                                     </View>
                                 </View>
-                                <View className="card-tags-container flex-row items-center gap-[7px] ">
+                                <ScrollView
+                                    horizontal
+                                    showsHorizontalScrollIndicator={false}
+                                    className="card-tags-container"
+                                    contentContainerStyle={{
+                                        flexDirection: "row",
+                                        alignItems: "center",
+                                        gap: 7,
+                                        paddingLeft: 25,
+                                    }}
+                                >
                                     {yogaClass.tagNames.map((tag, i) => (
                                         <View
                                             key={i}
@@ -220,13 +238,13 @@ export default function ClassDetails() {
                                             </AppText>
                                         </View>
                                     ))}
-                                </View>
+                                </ScrollView>
                             </View>
-                            <AppText className="description text-[15px] ">
+                            <AppText className="description text-[15px] px-[25px]">
                                 {yogaClass.description}
                             </AppText>
                             <TouchableOpacity onPress={openExternalLink}>
-                                <AppText className="text-[15px] text-linkBlue">
+                                <AppText className="text-[15px] text-linkBlue px-[25px]">
                                     클래스 상세보기
                                 </AppText>
                             </TouchableOpacity>
@@ -290,7 +308,9 @@ export default function ClassDetails() {
                                 className="time-slot-container flex-row "
                             >
                                 {enrichedTimeSlots
-                                    .filter((slot) => slot.classId === yogaClass.id)
+                                    .filter(
+                                        (slot) => slot.classId === yogaClass.id
+                                    )
                                     .map((slot) => (
                                         <TimeSlotCard
                                             key={slot.id}
@@ -306,7 +326,8 @@ export default function ClassDetails() {
                                             onPress={() => {
                                                 if (slot.isFull) return;
                                                 setSelectedTimeSlotId(
-                                                    selectedTimeSlotId === slot.id
+                                                    selectedTimeSlotId ===
+                                                        slot.id
                                                         ? null
                                                         : slot.id
                                                 );
@@ -319,7 +340,10 @@ export default function ClassDetails() {
 
                     {/* Address */}
                     <View className="address-container gap-[10px] p-[25px]">
-                        <AppText weight="semibold" className="title text-[18px] ">
+                        <AppText
+                            weight="semibold"
+                            className="title text-[18px] "
+                        >
                             위치
                         </AppText>
                         {/* 지도 넣을 곳 */}
