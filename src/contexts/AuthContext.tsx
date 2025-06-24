@@ -84,22 +84,58 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
     try {
       console.log("Attempting Kakao sign in...");
+      const redirectTo = makeRedirectUri({
+        path: '/auth/callback',
+      });
       const { data, error } = await supabase.auth.signInWithOAuth({
         provider: 'kakao',
         options: {
-          redirectTo: 'moment://auth/callback',
+          redirectTo,
           queryParams: {
             prompt: 'select_account',
           },
         }
       });
-      
       if (error) {
         console.error("Kakao sign in error:", error);
         return;
       }
-      
-      console.log("Kakao sign in response:", data);
+      const res = await WebBrowser.openAuthSessionAsync(data.url, redirectTo);
+
+      if (res.type === 'success') {
+        const url = res.url;
+        const hash = url.split('#')[1];
+        if (hash) {
+          const params = hash.split('&').reduce((acc, part) => {
+            const [key, value] = part.split('=');
+            acc[decodeURIComponent(key)] = decodeURIComponent(value);
+            return acc;
+          }, {} as Record<string, string>);
+
+          const accessToken = params['access_token'];
+          const refreshToken = params['refresh_token'];
+
+          if (accessToken && refreshToken) {
+            // 수동으로 세션 설정
+            const { error } = await supabase.auth.setSession({
+              access_token: accessToken,
+              refresh_token: refreshToken,
+            });
+
+            if (error) {
+              console.error("Error setting session from URL:", error);
+            }
+          } else {
+            console.error("Could not extract tokens from redirect URL hash");
+          }
+        } else {
+          console.error("Redirect URL does not contain a hash fragment");
+        }
+      } else if (res.type === 'cancel' || res.type === 'dismiss') {
+        console.log("Kakao OAuth flow was cancelled or dismissed by the user.");
+      } else {
+        console.warn("Kakao OAuth flow failed:", res);
+      }
     } catch (error) {
       console.error("Unexpected error during Kakao sign in:", error);
     }
