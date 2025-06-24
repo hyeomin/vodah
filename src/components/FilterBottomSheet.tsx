@@ -243,26 +243,42 @@ export default function FilterBottomSheet({
             <BottomSheetView className="footer-container px-[20px] py-[10px] gap-[10px]">
                 <View className="flex-row flex-wrap gap-[8px]">
                     {tempSelectedDistricts.map((district) => (
-                        <View
+                        <Pressable
                             key={district}
-                            className="border border-primary bg-primary/15 px-[10px] py-[7px] rounded-[7px]"
+                            onPress={() => {
+                                onTempSelectedDistrictsChange(
+                                    tempSelectedDistricts.filter(
+                                        (d) => d !== district
+                                    )
+                                );
+                            }}
                         >
-                            <AppText className="text-textSecondary">
-                                {district}
-                            </AppText>
-                        </View>
+                            <View className="border border-primary bg-primary/15 px-[10px] py-[7px] rounded-[7px]">
+                                <AppText className="text-textSecondary">
+                                    {district}
+                                </AppText>
+                            </View>
+                        </Pressable>
                     ))}
                     {tempSelectedTags.map((tagId) => {
                         const tag = tags.find((t) => t.id === tagId);
                         return tag ? (
-                            <View
+                            <Pressable
                                 key={tagId}
-                                className="border border-primary bg-primary/15 px-[10px] py-[7px] rounded-[7px]"
+                                onPress={() => {
+                                    onTempSelectedTagsChange(
+                                        tempSelectedTags.filter(
+                                            (id) => id !== tagId
+                                        )
+                                    );
+                                }}
                             >
-                                <AppText className="text-textSecondary">
-                                    {tag.name}
-                                </AppText>
-                            </View>
+                                <View className="border border-primary bg-primary/15 px-[10px] py-[7px] rounded-[7px]">
+                                    <AppText className="text-textSecondary">
+                                        {tag.name}
+                                    </AppText>
+                                </View>
+                            </Pressable>
                         ) : null;
                     })}
                 </View>
