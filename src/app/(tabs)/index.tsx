@@ -221,11 +221,12 @@ export default function HomeScreen() {
                   })
                 : classesWithFutureSlots;
 
-        const classWithMatchingCity = selectedCity
-            ? classWithMatchingDate.filter((yogaClass) => {
-                  return yogaClass.location?.city === selectedCity;
-              })
-            : classWithMatchingDate;
+        const classWithMatchingCity =
+            selectedCity && selectedDistricts.length > 0
+                ? classWithMatchingDate.filter((yogaClass) => {
+                      return yogaClass.location?.city === selectedCity;
+                  })
+                : classWithMatchingDate;
 
         const classWithMatchingDistrict =
             selectedDistricts.length === 0
@@ -444,12 +445,24 @@ export default function HomeScreen() {
                 {/* Filter Bar */}
                 <View className="filter-container flex-row px-[20px] py-[10px] gap-[5px] items-center">
                     <Pressable onPress={handleRegionTabPress}>
-                        <View className="filter-option-region items-center px-[15px] py-[7px] gap-[5px] rounded-[15px] border border-border">
+                        <View
+                            className={`filter-option-region items-center px-[15px] py-[7px] gap-[5px] rounded-[15px] border ${
+                                selectedDistricts.length > 0
+                                    ? "border-primary bg-primary/15"
+                                    : "border-border"
+                            }`}
+                        >
                             <AppText>지역</AppText>
                         </View>
                     </Pressable>
                     <Pressable onPress={handleTagTabPress}>
-                        <View className="filter-option-tag items-center px-[15px] py-[7px] gap-[5px] rounded-[15px] border border-border">
+                        <View
+                            className={`filter-option-tag items-center px-[15px] py-[7px] gap-[5px] rounded-[15px] border ${
+                                selectedTags.length > 0
+                                    ? "border-primary bg-primary/15"
+                                    : "border-border"
+                            }`}
+                        >
                             <AppText>태그</AppText>
                         </View>
                     </Pressable>
