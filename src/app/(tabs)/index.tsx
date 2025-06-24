@@ -1,4 +1,5 @@
 import AppText from "@/components/Apptext";
+import FilterBottomSheet from "@/components/FilterBottomSheet";
 import Footer from "@/components/Footer";
 import SvgIcons from "@/components/icons/SvgIcons";
 import YogaClassCard from "@/components/YogaClassCard";
@@ -8,20 +9,8 @@ import { useSupabase } from "@/hooks/useSupabase";
 import { useTimeSlots } from "@/hooks/useTimeSlots";
 import { useYogaClasses } from "@/hooks/useYogaClasses";
 import { enrichTimeSlots } from "@/utils/transformers";
-import BottomSheet, {
-    BottomSheetBackdrop,
-    BottomSheetHandle,
-    BottomSheetScrollView,
-    BottomSheetView,
-} from "@gorhom/bottom-sheet";
 import { useRouter } from "expo-router";
-import React, {
-    useCallback,
-    useEffect,
-    useMemo,
-    useRef,
-    useState,
-} from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import {
     ActivityIndicator,
     FlatList,
@@ -74,7 +63,7 @@ export default function HomeScreen() {
         if (!yogaClasses) return [];
         const cities = yogaClasses
             .map((yogaClass) => yogaClass.location?.city)
-            .filter(Boolean);
+            .filter((city): city is string => Boolean(city));
         return [...new Set(cities)];
     }, [yogaClasses]);
 
@@ -87,7 +76,7 @@ export default function HomeScreen() {
                     : true
             )
             .map((yogaClass) => yogaClass.location?.gu)
-            .filter(Boolean);
+            .filter((district): district is string => Boolean(district));
         return [...new Set(districts)];
     }, [yogaClasses, tempSelectedCity]);
 
@@ -137,11 +126,7 @@ export default function HomeScreen() {
         return dates;
     }, [selectedDates]);
 
-    const snapPoints = useMemo(() => ["25%", "75%"], []);
-    const bottomSheetRef = useRef<BottomSheet>(null);
-    const regionContentRef = useRef<View>(null);
-    const tagContentRef = useRef<View>(null);
-    const scrollViewRef = useRef<any>(null);
+    const bottomSheetRef = useRef<any>(null);
     const handleCloseBottomSheet = () => bottomSheetRef.current?.close();
     const handleOpenBottomSheet = () => {
         setTempSelectedCity(selectedCity);
@@ -159,43 +144,12 @@ export default function HomeScreen() {
     const handleRegionTabPress = () => {
         setSelectedTab("region");
         handleOpenBottomSheet();
-        setTimeout(() => {
-            if (regionContentRef.current && scrollViewRef.current) {
-                regionContentRef.current.measureLayout(
-                    scrollViewRef.current.getNativeScrollRef(),
-                    (x, y) => {
-                        scrollViewRef.current?.scrollTo({ y, animated: true });
-                    }
-                );
-            }
-        }, 100);
     };
 
     const handleTagTabPress = () => {
         setSelectedTab("tag");
         handleOpenBottomSheet();
-        setTimeout(() => {
-            if (tagContentRef.current && scrollViewRef.current) {
-                tagContentRef.current.measureLayout(
-                    scrollViewRef.current.getNativeScrollRef(),
-                    (x, y) => {
-                        scrollViewRef.current?.scrollTo({ y, animated: true });
-                    }
-                );
-            }
-        }, 100);
     };
-
-    const renderBackdrop = useCallback(
-        (props: any) => (
-            <BottomSheetBackdrop
-                {...props}
-                appearsOnIndex={0}
-                disappearsOnIndex={-1}
-            />
-        ),
-        []
-    );
 
     const handleResetFilters = () => {
         setSelectedCity(null);
@@ -550,214 +504,23 @@ export default function HomeScreen() {
                 )}
             </View>
             {/* --- End of Scrollable Content Area --- */}
-            <BottomSheet
-                ref={bottomSheetRef}
-                index={-1}
-                snapPoints={snapPoints}
-                backgroundStyle={{ backgroundColor: "#F9F8F5" }}
-                style={{ flex: 1 }}
-                enablePanDownToClose={true}
-                backdropComponent={renderBackdrop}
-                handleComponent={(props) => (
-                    <BottomSheetHandle
-                        {...props}
-                        style={{
-                            height: 30,
-                            borderTopLeftRadius: 10,
-                            borderTopRightRadius: 10,
-                        }}
-                    />
-                )}
-                enableContentPanningGesture={false}
-                enableHandlePanningGesture={true}
-            >
-                <BottomSheetView className="filter-tab-container border-b border-border flex-row px-[20px] gap-[10px] absolute top-0 left-0 right-0 z-10">
-                    <Pressable onPress={handleRegionTabPress}>
-                        <AppText
-                            className={`filter-name-region self-start text-[15px] p-[10px] ${
-                                selectedTab === "region" &&
-                                "border-b-2 border-black"
-                            }`}
-                        >
-                            지역
-                        </AppText>
-                    </Pressable>
-                    <Pressable onPress={handleTagTabPress}>
-                        <AppText
-                            className={`filter-name-tag self-start text-[15px] p-[10px] ${
-                                selectedTab === "tag" &&
-                                "border-b-2 border-black"
-                            }`}
-                        >
-                            태그
-                        </AppText>
-                    </Pressable>
-                </BottomSheetView>
-                <BottomSheetScrollView
-                    ref={scrollViewRef}
-                    className="filter-content-container mt-[60px]"
-                    showsVerticalScrollIndicator={true}
-                    contentContainerStyle={{ paddingBottom: 40 }}
-                >
-                    <View ref={regionContentRef}>
-                        <BottomSheetView className="region-filter-content p-[25px] gap-[15px]">
-                            <AppText
-                                weight="semibold"
-                                className="filter-title text-[17px] px-[5px]"
-                            >
-                                지역
-                            </AppText>
-                            {/* 요가 클래스 데이터에 한 번이라도 포함된 city unique하게 fetch */}
-                            <BottomSheetView className="filter-content-list flex-row flex-wrap justify-between">
-                                {uniqueCities.map((city) => (
-                                    <Pressable
-                                        key={city}
-                                        className="w-[20%] items-center py-[10px]"
-                                        onPress={() => {
-                                            city &&
-                                                setTempSelectedCity(
-                                                    tempSelectedCity === city
-                                                        ? null
-                                                        : city
-                                                );
-                                            setTempSelectedDistricts([]);
-                                        }}
-                                    >
-                                        <AppText
-                                            weight={
-                                                tempSelectedCity === city
-                                                    ? "bold"
-                                                    : "semibold"
-                                            }
-                                            className={`text-[14px] text-center ${
-                                                tempSelectedCity === city
-                                                    ? "text-primary"
-                                                    : ""
-                                            }`}
-                                        >
-                                            {city}
-                                        </AppText>
-                                    </Pressable>
-                                ))}
-                            </BottomSheetView>
-                            {/* 선택된 city에 대한 district unique하게 fetch; 한 번이라도 동일한 요가 클래스에서 같이 등장한 city와 district */}
-                            {tempSelectedCity && (
-                                <BottomSheetView className="filter-content-list-minor flex-row flex-wrap bg-border rounded-[10px] p-[15px] gap-[10px]">
-                                    {uniqueDistricts.map(
-                                        (district) =>
-                                            district && (
-                                                <Pressable
-                                                    key={district}
-                                                    className={`p-[7px] rounded-[7px] ${
-                                                        tempSelectedDistricts.includes(
-                                                            district
-                                                        )
-                                                            ? "bg-primary"
-                                                            : "bg-white"
-                                                    }`}
-                                                    onPress={() => {
-                                                        setTempSelectedDistricts(
-                                                            (prev) =>
-                                                                prev.includes(
-                                                                    district
-                                                                )
-                                                                    ? prev.filter(
-                                                                          (d) =>
-                                                                              d !==
-                                                                              district
-                                                                      )
-                                                                    : [
-                                                                          ...prev,
-                                                                          district,
-                                                                      ]
-                                                        );
-                                                    }}
-                                                >
-                                                    <AppText
-                                                        className={`text-[14px] text-center ${
-                                                            tempSelectedDistricts.includes(
-                                                                district
-                                                            )
-                                                                ? "text-white"
-                                                                : ""
-                                                        }`}
-                                                    >
-                                                        {district}
-                                                    </AppText>
-                                                </Pressable>
-                                            )
-                                    )}
-                                </BottomSheetView>
-                            )}
-                        </BottomSheetView>
-                    </View>
-                    <View
-                        className="tag-filter-content-wrapper"
-                        ref={tagContentRef}
-                    >
-                        <BottomSheetView className="tag-filter-content p-[25px] gap-[15px] mt-[20px]">
-                            <AppText
-                                weight="semibold"
-                                className="filter-title text-[17px] px-[5px]"
-                            >
-                                태그
-                            </AppText>
-                            <BottomSheetView className="filter-content-list flex-row flex-wrap bg-border rounded-[10px] p-[15px] gap-[10px]">
-                                {tags.map((tag) => (
-                                    <Pressable
-                                        key={tag.id}
-                                        className={`p-[7px] rounded-[7px] ${
-                                            tempSelectedTags.includes(tag.id)
-                                                ? "bg-primary"
-                                                : "bg-white"
-                                        }`}
-                                        onPress={() => {
-                                            setTempSelectedTags((prev) =>
-                                                prev.includes(tag.id)
-                                                    ? prev.filter(
-                                                          (id) => id !== tag.id
-                                                      )
-                                                    : [...prev, tag.id]
-                                            );
-                                        }}
-                                    >
-                                        <AppText
-                                            className={`text-[14px] text-center ${
-                                                tempSelectedTags.includes(
-                                                    tag.id
-                                                )
-                                                    ? "text-white"
-                                                    : ""
-                                            }`}
-                                        >
-                                            {tag.name}
-                                        </AppText>
-                                    </Pressable>
-                                ))}
-                            </BottomSheetView>
-                        </BottomSheetView>
-                    </View>
-                </BottomSheetScrollView>
-                <View className="bg-background p-[20px] flex-row gap-[10px]">
-                    <Pressable
-                        className="bg-white py-[15px] px-[40px] border border-border rounded-[7px] items-center"
-                        onPress={handleCloseBottomSheet}
-                    >
-                        <AppText className="text-[15px]">닫기</AppText>
-                    </Pressable>
-                    <Pressable
-                        className="flex-1 py-[15px] rounded-[7px] items-center bg-primary"
-                        onPress={handleShowResults}
-                    >
-                        <AppText
-                            className="text-white text-[15px]"
-                            weight="semibold"
-                        >
-                            결과보기
-                        </AppText>
-                    </Pressable>
-                </View>
-            </BottomSheet>
+            <FilterBottomSheet
+                bottomSheetRef={bottomSheetRef}
+                selectedTab={selectedTab}
+                tempSelectedCity={tempSelectedCity}
+                tempSelectedDistricts={tempSelectedDistricts}
+                tempSelectedTags={tempSelectedTags}
+                uniqueCities={uniqueCities}
+                uniqueDistricts={uniqueDistricts}
+                tags={tags}
+                onRegionTabPress={handleRegionTabPress}
+                onTagTabPress={handleTagTabPress}
+                onClose={handleCloseBottomSheet}
+                onShowResults={handleShowResults}
+                onTempSelectedCityChange={setTempSelectedCity}
+                onTempSelectedDistrictsChange={setTempSelectedDistricts}
+                onTempSelectedTagsChange={setTempSelectedTags}
+            />
             <Modal
                 isVisible={calendarVisible}
                 onBackdropPress={closeCalendar}
@@ -942,7 +705,7 @@ export default function HomeScreen() {
                     {/* 하단 버튼 */}
                     <View className="flex-row items-center gap-[10px] w-[362px] mx-auto mt-6">
                         <Pressable
-                            className="w-[85px] h-[45px] flex-row justify-center items-center border border-[#E0E0E0] rounded-[7px]"
+                            className="w-[85px] h-[45px] flex-row justify-center items-center border border-border rounded-[7px]"
                             onPress={closeCalendar}
                         >
                             <Text className="font-bold text-[14px] text-black">
