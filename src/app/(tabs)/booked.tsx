@@ -1,5 +1,6 @@
 import AppText from "@/components/Apptext";
 import { AddressIcon } from "@/components/icons/SvgIcons";
+import { useAuth } from "@/hooks/useAuth";
 import { useReservations } from "@/hooks/useReservations";
 import { useTimeSlots } from "@/hooks/useTimeSlots";
 import { useYogaClasses } from "@/hooks/useYogaClasses";
@@ -7,7 +8,10 @@ import React, { useMemo } from "react";
 import { ActivityIndicator, FlatList, Image, View } from "react-native";
 
 const BookedScreen = () => {
-    const { data: reservations = [], loading: loadingRes } = useReservations();
+    const { user, loading: authLoading } = useAuth();
+    const { data: reservations = [], loading: loadingRes } = useReservations({
+        userId: user?.id,
+    });
     const { data: timeSlots = [], loading: loadingSlots } = useTimeSlots();
     const { data: yogaClasses = [], loading: loadingClasses } =
         useYogaClasses();
@@ -106,7 +110,7 @@ const BookedScreen = () => {
         </View>
     );
 
-    if (loadingRes || loadingSlots || loadingClasses) {
+    if (authLoading || loadingRes || loadingSlots || loadingClasses) {
         return (
             <View className="flex-1 bg-background items-center justify-center">
                 <ActivityIndicator size="large" color="#0000ff" />
