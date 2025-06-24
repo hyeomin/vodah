@@ -4,7 +4,7 @@ import { useReservations } from "@/hooks/useReservations";
 import { useTimeSlots } from "@/hooks/useTimeSlots";
 import { useYogaClasses } from "@/hooks/useYogaClasses";
 import React, { useMemo } from "react";
-import { ActivityIndicator, FlatList, View } from "react-native";
+import { ActivityIndicator, FlatList, Image, View } from "react-native";
 
 const BookedScreen = () => {
     const { data: reservations = [], loading: loadingRes } = useReservations();
@@ -38,6 +38,7 @@ const BookedScreen = () => {
                 location: locationDisplay,
                 startTime: timeSlot?.startTime || new Date(),
                 endTime: timeSlot?.endTime || new Date(),
+                imageUrl: yogaClass?.imageUrls?.[0] || null,
             };
         });
     }, [reservations, timeSlots, yogaClasses]);
@@ -60,7 +61,17 @@ const BookedScreen = () => {
                     </AppText>
                 </View>
             </View>
-            <View className="card-item-image bg-gray-200 h-[120px] rounded-[10px]"></View>
+            <View className="card-item-image h-[120px] rounded-[10px] overflow-hidden">
+                {item.imageUrl ? (
+                    <Image
+                        source={{ uri: item.imageUrl }}
+                        className="w-full h-full"
+                        resizeMode="cover"
+                    />
+                ) : (
+                    <View className="w-full h-full bg-gray-200" />
+                )}
+            </View>
             <View className="card-details gap-[7px] px-[7px]">
                 <AppText weight="semibold" className="text-[17px]">
                     {item.classTitle}
