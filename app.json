@@ -31,39 +31,39 @@
         "fonts": [
             {
                 "asset": "./assets/fonts/Pretendard/Pretendard-Thin.ttf",
-                "family": "Pretendard"
+                "family": "Pretendard-Thin"
             },
             {
                 "asset": "./assets/fonts/Pretendard/Pretendard-ExtraLight.ttf",
-                "family": "Pretendard"
+                "family": "Pretendard-ExtraLight"
             },
             {
                 "asset": "./assets/fonts/Pretendard/Pretendard-Light.ttf",
-                "family": "Pretendard"
+                "family": "Pretendard-Light"
             },
             {
                 "asset": "./assets/fonts/Pretendard/Pretendard-Regular.ttf",
-                "family": "Pretendard"
+                "family": "Pretendard-Regular"
             },
             {
                 "asset": "./assets/fonts/Pretendard/Pretendard-Medium.ttf",
-                "family": "Pretendard"
+                "family": "Pretendard-Medium"
             },
             {
                 "asset": "./assets/fonts/Pretendard/Pretendard-SemiBold.ttf",
-                "family": "Pretendard"
+                "family": "Pretendard-SemiBold"
             },
             {
                 "asset": "./assets/fonts/Pretendard/Pretendard-Bold.ttf",
-                "family": "Pretendard"
+                "family": "Pretendard-Bold"
             },
             {
                 "asset": "./assets/fonts/Pretendard/Pretendard-ExtraBold.ttf",
-                "family": "Pretendard"
+                "family": "Pretendard-ExtraBold"
             },
             {
                 "asset": "./assets/fonts/Pretendard/Pretendard-Black.ttf",
-                "family": "Pretendard"
+                "family": "Pretendard-Black"
             }
         ]
     }
