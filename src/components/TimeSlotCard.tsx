@@ -98,11 +98,11 @@ export default function TimeSlotCard({
     return (
         <Pressable
             onPress={onPress}
-            className="one-slot-default bg-background border border-primary w-[120px] p-[10px] gap-[5px] justify-center items-center rounded-[10px] mr-[15px]"
+            className="one-slot-default bg-background border border-border w-[120px] p-[10px] gap-[5px] justify-center items-center rounded-[10px] mr-[15px]"
         >
             <AppText className="text-[13px]">{formattedDate}</AppText>
             <AppText className="text-[13px]">{timeRange}</AppText>
-            <AppText weight="semibold" className="text-[15px]">
+            <AppText weight="medium" className="text-[15px]">
                 {priceText}
             </AppText>
         </Pressable>

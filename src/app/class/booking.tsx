@@ -203,7 +203,7 @@ const BookingScreen = () => {
                 </Svg>
             </Pressable>
             {/* Booking Details */}
-            <View className="booking-info-container p-[25px] gap-[20px] border-b border-tertiary">
+            <View className="booking-info-container p-[25px] gap-[20px] border-b border-border">
                 <View className="self-center justify-center items-center">
                     <AppText
                         weight="semibold"
@@ -251,7 +251,7 @@ const BookingScreen = () => {
             </View>
 
             {/* Booking User Details */}
-            <View className="booking-user-details p-[25px] gap-[20px] border-b border-tertiary">
+            <View className="booking-user-details p-[25px] gap-[20px] border-b border-border">
                 <AppText weight="semibold" className="title text-[18px]">
                     예약자 정보
                 </AppText>
@@ -263,7 +263,7 @@ const BookingScreen = () => {
                     <TextInput
                         placeholder="이름을 입력해주세요"
                         placeholderTextColor={"gray"}
-                        className="input-field border border-tertiary rounded-[7px] h-[45px] px-[15px] text-[15px]"
+                        className="input-field border border-border rounded-[7px] h-[45px] px-[15px] text-[15px]"
                         value={name}
                         onChangeText={setName}
                     />
@@ -276,7 +276,7 @@ const BookingScreen = () => {
                     <TextInput
                         placeholder="휴대전화 번호를 입력해주세요"
                         placeholderTextColor={"gray"}
-                        className="input-field border border-tertiary rounded-[7px] h-[45px] px-[15px] text-[15px]"
+                        className="input-field border border-border rounded-[7px] h-[45px] px-[15px] text-[15px]"
                         value={phoneNumber}
                         onChangeText={(text) => {
                             // Remove all non-digit characters
@@ -319,11 +319,11 @@ const BookingScreen = () => {
             </View>
 
             {/* Attendee Count */}
-            <View className="attendee-count-container flex-row p-[25px] justify-between items-center border-b border-tertiary">
+            <View className="attendee-count-container flex-row p-[25px] justify-between items-center border-b border-border">
                 <AppText weight="semibold" className="title text-[18px]">
                     인원 선택
                 </AppText>
-                <View className="count-selector flex-row w-[130px] gap-[15px] justify-between px-[10px] py-[5px] items-center border border-tertiary rounded-[7px]">
+                <View className="count-selector flex-row w-[130px] gap-[15px] justify-between px-[10px] py-[5px] items-center border border-border rounded-[7px]">
                     <Pressable
                         onPress={handleDecrement}
                         className="w-[30px] h-[30px] items-center justify-center "
@@ -343,7 +343,7 @@ const BookingScreen = () => {
             </View>
 
             {/* Final Price */}
-            <View className="final-price-container  p-[25px] gap-[20px] border-b border-tertiary">
+            <View className="final-price-container  p-[25px] gap-[20px] border-b border-border">
                 <View className="price-summary flex-row justify-between">
                     <AppText weight="semibold" className="title text-[18px]">
                         최종 결제 금액
@@ -366,7 +366,7 @@ const BookingScreen = () => {
             </View>
 
             {/* Payment Method */}
-            <View className="notice-container p-[25px] gap-[20px] border-b border-tertiary">
+            <View className="notice-container p-[25px] gap-[20px] border-b border-border">
                 <AppText weight="semibold" className="title text-[18px]">
                     예약 안내
                 </AppText>
@@ -388,7 +388,7 @@ const BookingScreen = () => {
             </View>
 
             {/* Terms Agreement */}
-            <View className="terms-agreement-container p-[25px] gap-[20px] border-b border-tertiary">
+            <View className="terms-agreement-container p-[25px] gap-[20px] border-b border-border">
                 <View className="refund-terms bg-white border border-border rounded-[10px] p-[20px] gap-[10px]">
                     <AppText weight="semibold">환불 규정</AppText>
                     <View className="refund-policy-list gap-[5px]">

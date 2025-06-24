@@ -5,7 +5,6 @@ import { EnrichedYogaClass } from "@/utils/transformers";
 import { useRouter } from "expo-router";
 import React from "react";
 import { Image, Pressable, View } from "react-native";
-import React from "react";
 
 interface YogaClassCardProps {
     item: EnrichedYogaClass;
@@ -43,28 +42,23 @@ export default function YogaClassCard({
                 />
             </View>
             <View key="content" className="card-content gap-[7px] px-[7px]">
-                <AppText weight="semibold" className="text-[17px]">
-                    {item.title}
-                </AppText>
-                <View
-                    key="meta"
-                    className="card-meta-container flex-row items-center gap-[10px]"
-                >
+                <AppText className="text-[17px]">{item.title}</AppText>
+                <View key="meta" className="card-meta-container gap-[5px]">
                     <View
                         key="location"
-                        className="card-location-container flex-row items-center gap-[5px]"
+                        className="card-location-container flex-row items-center gap-[7px]"
                     >
                         <AddressIcon />
-                        <AppText className="text-[13px] text-tertiary">
+                        <AppText className="text-[14px] text-tertiary">
                             {locationInfo?.roadAddress || "위치 정보 없음"}
                         </AppText>
                     </View>
                     <View
                         key="date"
-                        className="card-date-container flex-row items-center gap-[5px]"
+                        className="card-date-container flex-row gap-[7px]"
                     >
                         <CalendarIcon />
-                        <AppText className="text-[13px] text-tertiary">
+                        <AppText className="text-[14px] text-tertiary flex-1">
                             <FormattedTimeSlots
                                 timeSlots={enrichedTimeSlots}
                                 classId={item.id}
@@ -75,11 +69,11 @@ export default function YogaClassCard({
                 </View>
                 <View
                     key="price"
-                    className="card-price-container flex-row items-center gap-[5px]"
+                    className="card-price-container flex-row items-end gap-[5px]"
                 >
                     {getMinPriceForClass(item.id) ? (
                         <>
-                            <AppText className="text-[16px] tracking-[0.014px]">
+                            <AppText weight="medium" className="text-[17px]">
                                 {`${getMinPriceForClass(
                                     item.id
                                 ).toLocaleString()}원~`}
@@ -89,10 +83,7 @@ export default function YogaClassCard({
                             </AppText>
                         </>
                     ) : (
-                        <AppText
-                            weight="semibold"
-                            className="text-[16px] tracking-[0.014px]"
-                        >
+                        <AppText weight="medium" className="text-[17px]">
                             가격문의
                         </AppText>
                     )}

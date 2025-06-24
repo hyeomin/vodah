@@ -1,27 +1,10 @@
+import { GlobalLoadingOverlay } from "@/components/GlobalLoadingOverlay";
+import { AuthProvider } from "@/contexts/AuthContext";
 import { Stack } from "expo-router";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 import "../../global.css";
-import * as Font from "expo-font";
-import { useEffect } from "react";
-import { useState } from "react";
-import { AuthProvider } from "@/contexts/AuthContext";
-import { GlobalLoadingOverlay } from "@/components/GlobalLoadingOverlay";
 
 export default function RootLayout() {
-    const [fontsLoaded, setFontsLoaded] = useState(false);
-
-    useEffect(() => {
-        (async () => {
-            await Font.loadAsync({
-                Poppins: require("../../assets/fonts/Poppins/Poppins-Regular.ttf"),
-                Pretendard: require("../../assets/fonts/Pretendard/Pretendard-Regular.ttf"),
-            });
-            setFontsLoaded(true);
-        })();
-    }, []);
-
-    if (!fontsLoaded) return null;
-
     return (
         <AuthProvider>
             <GestureHandlerRootView style={{ flex: 1 }}>
@@ -32,8 +15,14 @@ export default function RootLayout() {
                         fullScreenGestureEnabled: true,
                     }}
                 >
-                    <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-                    <Stack.Screen name="(auth)" options={{ headerShown: false }} />
+                    <Stack.Screen
+                        name="(tabs)"
+                        options={{ headerShown: false }}
+                    />
+                    <Stack.Screen
+                        name="(auth)"
+                        options={{ headerShown: false }}
+                    />
                     <Stack.Screen
                         name="class"
                         options={{ headerShown: false }}

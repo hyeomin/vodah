@@ -1,32 +1,46 @@
 import React from "react";
-import { Text, TextProps, TextStyle } from "react-native";
+import { Text, TextProps } from "react-native";
 
 interface AppTextProps extends TextProps {
-    weight?: "regular" | "bold" | "semibold";
+    weight?:
+        | "thin"
+        | "extralight"
+        | "light"
+        | "regular"
+        | "medium"
+        | "semibold"
+        | "bold"
+        | "extrabold"
+        | "black";
     fontFamily?: string;
 }
 
-const weightMap: Record<
-    NonNullable<AppTextProps["weight"]>,
-    TextStyle["fontWeight"]
-> = {
-    regular: "400",
-    semibold: "600",
-    bold: "700",
+const weightMap: Record<NonNullable<AppTextProps["weight"]>, string> = {
+    thin: "Pretendard-Thin",
+    extralight: "Pretendard-ExtraLight",
+    light: "Pretendard-Light",
+    regular: "Pretendard-Regular",
+    medium: "Pretendard-Medium",
+    semibold: "Pretendard-SemiBold",
+    bold: "Pretendard-Bold",
+    extrabold: "Pretendard-ExtraBold",
+    black: "Pretendard-Black",
 };
 
 export default function AppText({
     children,
     weight = "regular",
-    fontFamily = "Pretendard",
+    fontFamily,
     className,
     style,
     ...props
 }: AppTextProps) {
+    const finalFontFamily = fontFamily || weightMap[weight];
+
     return (
         <Text
             className={className}
-            style={[{ fontFamily, fontWeight: weightMap[weight] }, style]}
+            style={[{ fontFamily: finalFontFamily }, style]}
             {...props}
         >
             {children}

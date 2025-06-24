@@ -6,10 +6,10 @@ import {
     ContactIcon,
     DownArrowIcon,
 } from "@/components/icons/SvgIcons";
-import TimeSlotCard from "@/components/TimeSlotCard";
-import { useLoginRequired } from "@/hooks/useLoginRequired";
 import { LoginRequiredModal } from "@/components/LoginRequiredModal";
+import TimeSlotCard from "@/components/TimeSlotCard";
 import { useInstructors } from "@/hooks/useInstructors";
+import { useLoginRequired } from "@/hooks/useLoginRequired";
 import { useReservations } from "@/hooks/useReservations";
 import { useTimeSlots } from "@/hooks/useTimeSlots";
 import { useYogaClasses } from "@/hooks/useYogaClasses";
@@ -185,7 +185,7 @@ export default function ClassDetails() {
                     </View>
 
                     {/* Intro-Summary */}
-                    <View className="class-header-container py-[25px] border-b border-tertiary">
+                    <View className="class-header-container py-[25px] border-b border-border">
                         <View className="class-header gap-[20px]">
                             <View className="key-summary-container gap-[10px]">
                                 <View className="text-container gap-[7px] px-[25px]">
@@ -294,7 +294,7 @@ export default function ClassDetails() {
                     </View> */}
 
                     {/* Booking */}
-                    <View className="booking-container gap-[20px] px-[25px] pt-[25px] pb-[35px] border-b border-tertiary">
+                    <View className="booking-container gap-[20px] px-[25px] pt-[25px] pb-[35px] border-b border-border">
                         <View className="booking gap-[20px]">
                             <AppText
                                 weight="semibold"

@@ -1,35 +1,44 @@
 import AppText from "@/components/Apptext";
+import FilterBottomSheet from "@/components/FilterBottomSheet";
 import Footer from "@/components/Footer";
 import SvgIcons from "@/components/icons/SvgIcons";
 import YogaClassCard from "@/components/YogaClassCard";
+import { useAuth } from "@/contexts/AuthContext";
 import { useReservations } from "@/hooks/useReservations";
 import { useSupabase } from "@/hooks/useSupabase";
 import { useTimeSlots } from "@/hooks/useTimeSlots";
 import { useYogaClasses } from "@/hooks/useYogaClasses";
 import { enrichTimeSlots } from "@/utils/transformers";
 import { useRouter } from "expo-router";
-import BottomSheet, {
-    BottomSheetBackdrop,
-    BottomSheetHandle,
-    BottomSheetScrollView,
-    BottomSheetView,
-} from "@gorhom/bottom-sheet";
-import React, { useCallback, useMemo, useRef, useState, useEffect } from "react";
-import { ActivityIndicator, FlatList, Pressable, View, Text } from "react-native";
-import Modal from 'react-native-modal';
-import { useAuth } from "@/contexts/AuthContext";
+import React, { useEffect, useMemo, useRef, useState } from "react";
+import {
+    ActivityIndicator,
+    FlatList,
+    Pressable,
+    Text,
+    View,
+} from "react-native";
+import Modal from "react-native-modal";
 
 export default function HomeScreen() {
     const [selectedDates, setSelectedDates] = useState<Date[]>([]);
-    const [currentMonth, setCurrentMonth] = useState<number>(new Date().getMonth());
-    const [currentYear, setCurrentYear] = useState<number>(new Date().getFullYear());
+    const [currentMonth, setCurrentMonth] = useState<number>(
+        new Date().getMonth()
+    );
+    const [currentYear, setCurrentYear] = useState<number>(
+        new Date().getFullYear()
+    );
     const [selectedTab, setSelectedTab] = useState<"region" | "tag">("region");
     const [selectedCity, setSelectedCity] = useState<string | null>("");
     const [selectedDistricts, setSelectedDistricts] = useState<string[]>([]);
     const [selectedTags, setSelectedTags] = useState<string[]>([]);
-    const [tempSelectedCity, setTempSelectedCity] = useState<string | null>(selectedCity);
-    const [tempSelectedDistricts, setTempSelectedDistricts] = useState<string[]>(selectedDistricts);
-    const [tempSelectedTags, setTempSelectedTags] = useState<string[]>(selectedTags);
+    const [tempSelectedCity, setTempSelectedCity] = useState<string | null>(
+        selectedCity
+    );
+    const [tempSelectedDistricts, setTempSelectedDistricts] =
+        useState<string[]>(selectedDistricts);
+    const [tempSelectedTags, setTempSelectedTags] =
+        useState<string[]>(selectedTags);
     const [calendarVisible, setCalendarVisible] = useState(false);
     const [tempSelectedDates, setTempSelectedDates] = useState<Date[]>([]);
     const [calendarMonth, setCalendarMonth] = useState(new Date().getMonth());
@@ -54,7 +63,7 @@ export default function HomeScreen() {
         if (!yogaClasses) return [];
         const cities = yogaClasses
             .map((yogaClass) => yogaClass.location?.city)
-            .filter(Boolean);
+            .filter((city): city is string => Boolean(city));
         return [...new Set(cities)];
     }, [yogaClasses]);
 
@@ -67,7 +76,7 @@ export default function HomeScreen() {
                     : true
             )
             .map((yogaClass) => yogaClass.location?.gu)
-            .filter(Boolean);
+            .filter((district): district is string => Boolean(district));
         return [...new Set(districts)];
     }, [yogaClasses, tempSelectedCity]);
 
@@ -104,9 +113,10 @@ export default function HomeScreen() {
                 date: date.getDate(),
                 fullDate: date,
                 selected: selectedDates.some(
-                    d => d.getFullYear() === date.getFullYear() &&
-                         d.getMonth() === date.getMonth() &&
-                         d.getDate() === date.getDate()
+                    (d) =>
+                        d.getFullYear() === date.getFullYear() &&
+                        d.getMonth() === date.getMonth() &&
+                        d.getDate() === date.getDate()
                 ),
                 isToday: i === 0,
                 weekend: date.getDay() === 0 || date.getDay() === 6,
@@ -116,11 +126,7 @@ export default function HomeScreen() {
         return dates;
     }, [selectedDates]);
 
-    const snapPoints = useMemo(() => ["25%", "75%"], []);
-    const bottomSheetRef = useRef<BottomSheet>(null);
-    const regionContentRef = useRef<View>(null);
-    const tagContentRef = useRef<View>(null);
-    const scrollViewRef = useRef<any>(null);
+    const bottomSheetRef = useRef<any>(null);
     const handleCloseBottomSheet = () => bottomSheetRef.current?.close();
     const handleOpenBottomSheet = () => {
         setTempSelectedCity(selectedCity);
@@ -138,43 +144,12 @@ export default function HomeScreen() {
     const handleRegionTabPress = () => {
         setSelectedTab("region");
         handleOpenBottomSheet();
-        setTimeout(() => {
-            if (regionContentRef.current && scrollViewRef.current) {
-                regionContentRef.current.measureLayout(
-                    scrollViewRef.current.getNativeScrollRef(),
-                    (x, y) => {
-                        scrollViewRef.current?.scrollTo({ y, animated: true });
-                    }
-                );
-            }
-        }, 100);
     };
 
     const handleTagTabPress = () => {
         setSelectedTab("tag");
         handleOpenBottomSheet();
-        setTimeout(() => {
-            if (tagContentRef.current && scrollViewRef.current) {
-                tagContentRef.current.measureLayout(
-                    scrollViewRef.current.getNativeScrollRef(),
-                    (x, y) => {
-                        scrollViewRef.current?.scrollTo({ y, animated: true });
-                    }
-                );
-            }
-        }, 100);
     };
-
-    const renderBackdrop = useCallback(
-        (props: any) => (
-            <BottomSheetBackdrop
-                {...props}
-                appearsOnIndex={0}
-                disappearsOnIndex={-1}
-            />
-        ),
-        []
-    );
 
     const handleResetFilters = () => {
         setSelectedCity(null);
@@ -185,15 +160,19 @@ export default function HomeScreen() {
 
     const isAnyLoading = loading || loadingSlots || loadingRes || loadingTags;
 
-    const onViewableItemsChanged = useRef(({
-        viewableItems
-    }: { viewableItems: Array<{ item: { fullDate: Date } }> }) => {
-        if (viewableItems.length > 0) {
-            const firstDate = viewableItems[0].item.fullDate;
-            setCurrentMonth(firstDate.getMonth());
-            setCurrentYear(firstDate.getFullYear());
+    const onViewableItemsChanged = useRef(
+        ({
+            viewableItems,
+        }: {
+            viewableItems: Array<{ item: { fullDate: Date } }>;
+        }) => {
+            if (viewableItems.length > 0) {
+                const firstDate = viewableItems[0].item.fullDate;
+                setCurrentMonth(firstDate.getMonth());
+                setCurrentYear(firstDate.getFullYear());
+            }
         }
-    }).current;
+    ).current;
 
     const filteredYogaClasses = useMemo(() => {
         if (!yogaClasses) return [];
@@ -222,28 +201,32 @@ export default function HomeScreen() {
                     (classIdToNextSlotTime.get(b.id) ?? Infinity)
             );
 
-        const classWithMatchingDate = selectedDates.length > 0
-            ? classesWithFutureSlots.filter((yogaClass) => {
-                const hasMatchingTimeSlot = enrichedTimeSlots.some(
-                    (slot) =>
-                        slot.classId === yogaClass.id &&
-                        selectedDates.some(
-                            d =>
-                                d.getFullYear() === slot.startTime.getFullYear() &&
-                                d.getMonth() === slot.startTime.getMonth() &&
-                                d.getDate() === slot.startTime.getDate()
-                        ) &&
-                        slot.startTime > now
-                );
-                return hasMatchingTimeSlot;
-            })
-            : classesWithFutureSlots;
+        const classWithMatchingDate =
+            selectedDates.length > 0
+                ? classesWithFutureSlots.filter((yogaClass) => {
+                      const hasMatchingTimeSlot = enrichedTimeSlots.some(
+                          (slot) =>
+                              slot.classId === yogaClass.id &&
+                              selectedDates.some(
+                                  (d) =>
+                                      d.getFullYear() ===
+                                          slot.startTime.getFullYear() &&
+                                      d.getMonth() ===
+                                          slot.startTime.getMonth() &&
+                                      d.getDate() === slot.startTime.getDate()
+                              ) &&
+                              slot.startTime > now
+                      );
+                      return hasMatchingTimeSlot;
+                  })
+                : classesWithFutureSlots;
 
-        const classWithMatchingCity = selectedCity
-            ? classWithMatchingDate.filter((yogaClass) => {
-                  return yogaClass.location?.city === selectedCity;
-              })
-            : classWithMatchingDate;
+        const classWithMatchingCity =
+            selectedCity && selectedDistricts.length > 0
+                ? classWithMatchingDate.filter((yogaClass) => {
+                      return yogaClass.location?.city === selectedCity;
+                  })
+                : classWithMatchingDate;
 
         const classWithMatchingDistrict =
             selectedDistricts.length === 0
@@ -264,7 +247,14 @@ export default function HomeScreen() {
                   });
 
         return classWithMatchingTag;
-    }, [selectedDates, yogaClasses, enrichedTimeSlots, selectedCity, selectedDistricts, selectedTags]);
+    }, [
+        selectedDates,
+        yogaClasses,
+        enrichedTimeSlots,
+        selectedCity,
+        selectedDistricts,
+        selectedTags,
+    ]);
 
     // Helper function to find minimum price for a class
     const getMinPriceForClass = (classId: string): number => {
@@ -286,7 +276,11 @@ export default function HomeScreen() {
     };
 
     const calendarRows = useMemo(() => {
-        const daysInMonth = new Date(calendarYear, calendarMonth + 1, 0).getDate();
+        const daysInMonth = new Date(
+            calendarYear,
+            calendarMonth + 1,
+            0
+        ).getDate();
         const firstDay = new Date(calendarYear, calendarMonth, 1).getDay();
         const rows = [];
         let row = [];
@@ -311,24 +305,16 @@ export default function HomeScreen() {
         return rows;
     }, [calendarYear, calendarMonth]);
 
-    // 요일 헤더 부분 수정
-    <View className="flex-row justify-center items-center gap-x-1 mb-3">
-        {["일", "월", "화", "수", "목", "금", "토"].map((d, i) => (
-            <Text key={d} className="font-bold text-[14px] leading-[17px] text-gray-400 w-[36px] text-center">
-                {d}
-            </Text>
-        ))}
-    </View>
-
     // 달력 날짜 그리드에서 실제로 수업이 있는 날짜만 enable
     const availableDatesSet = useMemo(() => {
         return new Set(
             enrichedTimeSlots
-                .filter(slot =>
-                    slot.startTime.getFullYear() === calendarYear &&
-                    slot.startTime.getMonth() === calendarMonth
+                .filter(
+                    (slot) =>
+                        slot.startTime.getFullYear() === calendarYear &&
+                        slot.startTime.getMonth() === calendarMonth
                 )
-                .map(slot => slot.startTime.getDate())
+                .map((slot) => slot.startTime.getDate())
         );
     }, [enrichedTimeSlots, calendarYear, calendarMonth]);
 
@@ -357,14 +343,26 @@ export default function HomeScreen() {
                             className="w-[56px] h-[29px] bg-[#8889BD] rounded-[7px] flex-row justify-center items-center"
                             onPress={signOut}
                         >
-                            <AppText fontFamily="Roboto" className="text-white text-[13px] font-medium">로그아웃</AppText>
+                            <AppText
+                                fontFamily="Roboto"
+                                className="text-white text-[13px] font-medium"
+                            >
+                                로그아웃
+                            </AppText>
                         </Pressable>
                     ) : (
                         <Pressable
                             className="w-[56px] h-[29px] bg-[#8889BD] rounded-[7px] flex-row justify-center items-center"
-                            onPress={() => { router.push('/login'); }}
+                            onPress={() => {
+                                router.push("/login");
+                            }}
                         >
-                            <AppText fontFamily="Roboto" className="text-white text-[13px] font-medium">로그인</AppText>
+                            <AppText
+                                fontFamily="Roboto"
+                                className="text-white text-[13px] font-medium"
+                            >
+                                로그인
+                            </AppText>
                         </Pressable>
                     )}
                 </View>
@@ -380,18 +378,32 @@ export default function HomeScreen() {
                         <Pressable
                             onPress={() => {
                                 const alreadySelected = selectedDates.some(
-                                    d => d.getFullYear() === day.fullDate.getFullYear() &&
-                                         d.getMonth() === day.fullDate.getMonth() &&
-                                         d.getDate() === day.fullDate.getDate()
+                                    (d) =>
+                                        d.getFullYear() ===
+                                            day.fullDate.getFullYear() &&
+                                        d.getMonth() ===
+                                            day.fullDate.getMonth() &&
+                                        d.getDate() === day.fullDate.getDate()
                                 );
                                 if (alreadySelected) {
-                                    setSelectedDates(selectedDates.filter(
-                                        d => !(d.getFullYear() === day.fullDate.getFullYear() &&
-                                               d.getMonth() === day.fullDate.getMonth() &&
-                                               d.getDate() === day.fullDate.getDate())
-                                    ));
+                                    setSelectedDates(
+                                        selectedDates.filter(
+                                            (d) =>
+                                                !(
+                                                    d.getFullYear() ===
+                                                        day.fullDate.getFullYear() &&
+                                                    d.getMonth() ===
+                                                        day.fullDate.getMonth() &&
+                                                    d.getDate() ===
+                                                        day.fullDate.getDate()
+                                                )
+                                        )
+                                    );
                                 } else {
-                                    setSelectedDates([...selectedDates, day.fullDate]);
+                                    setSelectedDates([
+                                        ...selectedDates,
+                                        day.fullDate,
+                                    ]);
                                 }
                             }}
                             className="one-day-container items-center gap-[6px] mx-[10px]"
@@ -424,19 +436,33 @@ export default function HomeScreen() {
                             )}
                         </Pressable>
                     )}
-                    keyExtractor={(day) => `${day.label}-${day.fullDate.toISOString()}`}
+                    keyExtractor={(day) =>
+                        `${day.label}-${day.fullDate.toISOString()}`
+                    }
                     onViewableItemsChanged={onViewableItemsChanged}
                     viewabilityConfig={{ itemVisiblePercentThreshold: 50 }}
                 />
                 {/* Filter Bar */}
                 <View className="filter-container flex-row px-[20px] py-[10px] gap-[5px] items-center">
                     <Pressable onPress={handleRegionTabPress}>
-                        <View className="filter-option-region items-center px-[15px] py-[7px] gap-[5px] rounded-[15px] border border-border">
+                        <View
+                            className={`filter-option-region items-center px-[15px] py-[7px] gap-[5px] rounded-[15px] border ${
+                                selectedDistricts.length > 0
+                                    ? "border-primary bg-primary/15"
+                                    : "border-border"
+                            }`}
+                        >
                             <AppText>지역</AppText>
                         </View>
                     </Pressable>
                     <Pressable onPress={handleTagTabPress}>
-                        <View className="filter-option-tag items-center px-[15px] py-[7px] gap-[5px] rounded-[15px] border border-border">
+                        <View
+                            className={`filter-option-tag items-center px-[15px] py-[7px] gap-[5px] rounded-[15px] border ${
+                                selectedTags.length > 0
+                                    ? "border-primary bg-primary/15"
+                                    : "border-border"
+                            }`}
+                        >
                             <AppText>태그</AppText>
                         </View>
                     </Pressable>
@@ -491,223 +517,27 @@ export default function HomeScreen() {
                 )}
             </View>
             {/* --- End of Scrollable Content Area --- */}
-            <BottomSheet
-                ref={bottomSheetRef}
-                index={-1}
-                snapPoints={snapPoints}
-                backgroundStyle={{ backgroundColor: "white" }}
-                style={{ flex: 1 }}
-                enablePanDownToClose={true}
-                backdropComponent={renderBackdrop}
-                handleComponent={(props) => (
-                    <BottomSheetHandle
-                        {...props}
-                        style={{
-                            height: 30,
-                            borderTopLeftRadius: 10,
-                            borderTopRightRadius: 10,
-                        }}
-                    />
-                )}
-                enableContentPanningGesture={false}
-                enableHandlePanningGesture={true}
-            >
-                <BottomSheetView className="filter-tab-container border-b border-border flex-row px-[20px] gap-[10px] absolute top-0 left-0 right-0 bg-white z-10">
-                    <Pressable onPress={handleRegionTabPress}>
-                        <AppText
-                            weight="semibold"
-                            className={`filter-name-region self-start text-[15px] p-[10px] ${
-                                selectedTab === "region"
-                                    ? "border-b-2 border-black"
-                                    : "text-primary"
-                            }`}
-                        >
-                            지역
-                        </AppText>
-                    </Pressable>
-                    <Pressable onPress={handleTagTabPress}>
-                        <AppText
-                            className={`filter-name-tag self-start text-[15px] p-[10px] ${
-                                selectedTab === "tag"
-                                    ? "border-b-2 border-black"
-                                    : "text-primary"
-                            }`}
-                        >
-                            태그
-                        </AppText>
-                    </Pressable>
-                </BottomSheetView>
-                <BottomSheetScrollView
-                    ref={scrollViewRef}
-                    className="filter-content-container mt-[60px]"
-                    showsVerticalScrollIndicator={true}
-                    contentContainerStyle={{ paddingBottom: 40 }}
-                >
-                    <View ref={regionContentRef}>
-                        <BottomSheetView className="region-filter-content p-[25px] gap-[15px]">
-                            <AppText
-                                weight="semibold"
-                                className="filter-title text-[17px] px-[5px]"
-                            >
-                                지역
-                            </AppText>
-                            {/* 요가 클래스 데이터에 한 번이라도 포함된 city unique하게 fetch */}
-                            <BottomSheetView className="filter-content-list flex-row flex-wrap justify-between">
-                                {uniqueCities.map((city) => (
-                                    <Pressable
-                                        key={city}
-                                        className="w-[20%] items-center py-[10px]"
-                                        onPress={() => {
-                                            city &&
-                                                setTempSelectedCity(
-                                                    tempSelectedCity === city
-                                                        ? null
-                                                        : city
-                                                );
-                                            setTempSelectedDistricts([]);
-                                        }}
-                                    >
-                                        <AppText
-                                            weight={
-                                                tempSelectedCity === city
-                                                    ? "bold"
-                                                    : "semibold"
-                                            }
-                                            className={`text-[14px] text-center ${
-                                                tempSelectedCity === city
-                                                    ? "text-primary"
-                                                    : ""
-                                            }`}
-                                        >
-                                            {city}
-                                        </AppText>
-                                    </Pressable>
-                                ))}
-                            </BottomSheetView>
-                            {/* 선택된 city에 대한 district unique하게 fetch; 한 번이라도 동일한 요가 클래스에서 같이 등장한 city와 district */}
-                            {tempSelectedCity && (
-                                <BottomSheetView className="filter-content-list-minor flex-row flex-wrap bg-border rounded-[10px] p-[15px] gap-[10px]">
-                                    {uniqueDistricts.map(
-                                        (district) =>
-                                            district && (
-                                                <Pressable
-                                                    key={district}
-                                                    className={`p-[7px] rounded-[7px] ${
-                                                        tempSelectedDistricts.includes(
-                                                            district
-                                                        )
-                                                            ? "bg-primary"
-                                                            : "bg-white"
-                                                    }`}
-                                                    onPress={() => {
-                                                        setTempSelectedDistricts(
-                                                            (prev) =>
-                                                                prev.includes(
-                                                                    district
-                                                                )
-                                                                    ? prev.filter(
-                                                                          (d) =>
-                                                                              d !==
-                                                                              district
-                                                                      )
-                                                                    : [
-                                                                          ...prev,
-                                                                          district,
-                                                                      ]
-                                                        );
-                                                    }}
-                                                >
-                                                    <AppText
-                                                        className={`text-[14px] text-center ${
-                                                            tempSelectedDistricts.includes(
-                                                                district
-                                                            )
-                                                                ? "text-white"
-                                                                : ""
-                                                        }`}
-                                                    >
-                                                        {district}
-                                                    </AppText>
-                                                </Pressable>
-                                            )
-                                    )}
-                                </BottomSheetView>
-                            )}
-                        </BottomSheetView>
-                    </View>
-                    <View
-                        className="tag-filter-content-wrapper"
-                        ref={tagContentRef}
-                    >
-                        <BottomSheetView className="tag-filter-content p-[25px] gap-[15px] mt-[20px]">
-                            <AppText
-                                weight="semibold"
-                                className="filter-title text-[17px] px-[5px]"
-                            >
-                                태그
-                            </AppText>
-                            <BottomSheetView className="filter-content-list flex-row flex-wrap bg-border rounded-[10px] p-[15px] gap-[10px]">
-                                {tags.map((tag) => (
-                                    <Pressable
-                                        key={tag.id}
-                                        className={`p-[7px] rounded-[7px] ${
-                                            tempSelectedTags.includes(tag.id)
-                                                ? "bg-primary"
-                                                : "bg-white"
-                                        }`}
-                                        onPress={() => {
-                                            setTempSelectedTags((prev) =>
-                                                prev.includes(tag.id)
-                                                    ? prev.filter(
-                                                          (id) => id !== tag.id
-                                                      )
-                                                    : [...prev, tag.id]
-                                            );
-                                        }}
-                                    >
-                                        <AppText
-                                            className={`text-[14px] text-center ${
-                                                tempSelectedTags.includes(
-                                                    tag.id
-                                                )
-                                                    ? "text-white"
-                                                    : ""
-                                            }`}
-                                        >
-                                            {tag.name}
-                                        </AppText>
-                                    </Pressable>
-                                ))}
-                            </BottomSheetView>
-                        </BottomSheetView>
-                    </View>
-                </BottomSheetScrollView>
-                <View className="bg-white p-[20px] flex-row gap-[10px]">
-                    <Pressable
-                        className="bg-white py-[15px] px-[40px] border border-border rounded-[7px] items-center"
-                        onPress={handleCloseBottomSheet}
-                    >
-                        <AppText className="text-[14px]" weight="semibold">
-                            닫기
-                        </AppText>
-                    </Pressable>
-                    <Pressable
-                        className="flex-1 py-[15px] rounded-[7px] items-center bg-primary"
-                        onPress={handleShowResults}
-                    >
-                        <AppText
-                            className="text-white text-[14px]"
-                            weight="semibold"
-                        >
-                            결과보기
-                        </AppText>
-                    </Pressable>
-                </View>
-            </BottomSheet>
+            <FilterBottomSheet
+                bottomSheetRef={bottomSheetRef}
+                selectedTab={selectedTab}
+                tempSelectedCity={tempSelectedCity}
+                tempSelectedDistricts={tempSelectedDistricts}
+                tempSelectedTags={tempSelectedTags}
+                uniqueCities={uniqueCities}
+                uniqueDistricts={uniqueDistricts}
+                tags={tags}
+                onRegionTabPress={handleRegionTabPress}
+                onTagTabPress={handleTagTabPress}
+                onClose={handleCloseBottomSheet}
+                onShowResults={handleShowResults}
+                onTempSelectedCityChange={setTempSelectedCity}
+                onTempSelectedDistrictsChange={setTempSelectedDistricts}
+                onTempSelectedTagsChange={setTempSelectedTags}
+            />
             <Modal
                 isVisible={calendarVisible}
                 onBackdropPress={closeCalendar}
-                style={{ justifyContent: 'flex-end', margin: 0 }}
+                style={{ justifyContent: "flex-end", margin: 0 }}
                 backdropOpacity={0.3}
                 animationIn="slideInUp"
                 animationOut="slideOutDown"
@@ -718,26 +548,38 @@ export default function HomeScreen() {
 
                     {/* 월/연도 & 화살표 */}
                     <View className="flex-row items-center justify-center gap-x-[30px] mb-7">
-                        <Pressable onPress={() => {
-                            // 이전 달로 이동
-                            const prevMonth = new Date(calendarYear, calendarMonth - 1, 1);
-                            setCalendarYear(prevMonth.getFullYear());
-                            setCalendarMonth(prevMonth.getMonth());
-                        }}>
-                            <View style={{ transform: [{ rotate: '90deg' }] }}>
+                        <Pressable
+                            onPress={() => {
+                                // 이전 달로 이동
+                                const prevMonth = new Date(
+                                    calendarYear,
+                                    calendarMonth - 1,
+                                    1
+                                );
+                                setCalendarYear(prevMonth.getFullYear());
+                                setCalendarMonth(prevMonth.getMonth());
+                            }}
+                        >
+                            <View style={{ transform: [{ rotate: "90deg" }] }}>
                                 <SvgIcons.DownArrowIcon />
                             </View>
                         </Pressable>
                         <Text className="font-bold text-[16px] leading-[19px] text-black mx-[15px]">
                             {`${calendarYear}년 ${calendarMonth + 1}월`}
                         </Text>
-                        <Pressable onPress={() => {
-                            // 다음 달로 이동
-                            const nextMonth = new Date(calendarYear, calendarMonth + 1, 1);
-                            setCalendarYear(nextMonth.getFullYear());
-                            setCalendarMonth(nextMonth.getMonth());
-                        }}>
-                            <View style={{ transform: [{ rotate: '-90deg' }] }}>
+                        <Pressable
+                            onPress={() => {
+                                // 다음 달로 이동
+                                const nextMonth = new Date(
+                                    calendarYear,
+                                    calendarMonth + 1,
+                                    1
+                                );
+                                setCalendarYear(nextMonth.getFullYear());
+                                setCalendarMonth(nextMonth.getMonth());
+                            }}
+                        >
+                            <View style={{ transform: [{ rotate: "-90deg" }] }}>
                                 <SvgIcons.DownArrowIcon />
                             </View>
                         </Pressable>
@@ -745,69 +587,127 @@ export default function HomeScreen() {
 
                     {/* 요일 헤더 */}
                     <View className="flex-row justify-center items-center gap-x-[6px] mb-5">
-                        {["일", "월", "화", "수", "목", "금", "토"].map((d, i) => (
-                            <Text key={d} className="font-bold text-[14px] leading-[17px] text-gray-400 w-[40px] text-center">
-                                {d}
-                            </Text>
-                        ))}
+                        {["일", "월", "화", "수", "목", "금", "토"].map(
+                            (d, i) => (
+                                <Text
+                                    key={d}
+                                    className="font-bold text-[14px] leading-[17px] text-gray-400 w-[40px] text-center"
+                                >
+                                    {d}
+                                </Text>
+                            )
+                        )}
                     </View>
 
                     {/* 날짜 그리드 */}
                     <View className="flex-col items-center gap-y-[5px]">
                         {calendarRows.map((week, rowIdx) => (
-                            <View key={rowIdx} className="flex-row justify-center items-start gap-x-[6px]">
+                            <View
+                                key={rowIdx}
+                                className="flex-row justify-center items-start gap-x-[6px]"
+                            >
                                 {week.map((day, colIdx) => {
                                     if (!day) {
-                                        return <View key={colIdx} className="w-[40px] h-[52px]" />;
+                                        return (
+                                            <View
+                                                key={colIdx}
+                                                className="w-[40px] h-[52px]"
+                                            />
+                                        );
                                     }
                                     const isAvailable = (() => {
                                         const today = new Date();
-                                        today.setHours(0,0,0,0);
+                                        today.setHours(0, 0, 0, 0);
                                         const thisDay = new Date(day);
-                                        thisDay.setHours(0,0,0,0);
-                                        return availableDatesSet.has(day.getDate()) && thisDay >= today;
+                                        thisDay.setHours(0, 0, 0, 0);
+                                        return (
+                                            availableDatesSet.has(
+                                                day.getDate()
+                                            ) && thisDay >= today
+                                        );
                                     })();
-                                    const isSelected = tempSelectedDates.some(d =>
-                                        d.getFullYear() === day.getFullYear() &&
-                                        d.getMonth() === day.getMonth() &&
-                                        d.getDate() === day.getDate()
+                                    const isSelected = tempSelectedDates.some(
+                                        (d) =>
+                                            d.getFullYear() ===
+                                                day.getFullYear() &&
+                                            d.getMonth() === day.getMonth() &&
+                                            d.getDate() === day.getDate()
                                     );
                                     const isToday = (() => {
                                         const now = new Date();
-                                        return now.getFullYear() === day.getFullYear() &&
+                                        return (
+                                            now.getFullYear() ===
+                                                day.getFullYear() &&
                                             now.getMonth() === day.getMonth() &&
-                                            now.getDate() === day.getDate();
+                                            now.getDate() === day.getDate()
+                                        );
                                     })();
-                                    const isWeekend = day.getDay() === 0 || day.getDay() === 6;
+                                    const isWeekend =
+                                        day.getDay() === 0 ||
+                                        day.getDay() === 6;
                                     return (
                                         <Pressable
                                             key={colIdx}
                                             className="flex-col items-center gap-[6px] w-[40px] h-[52px]"
                                             onPress={() => {
                                                 if (!isAvailable) return;
-                                                const alreadySelected = tempSelectedDates.some(
-                                                    d => d.getFullYear() === day.getFullYear() &&
-                                                        d.getMonth() === day.getMonth() &&
-                                                        d.getDate() === day.getDate()
-                                                );
+                                                const alreadySelected =
+                                                    tempSelectedDates.some(
+                                                        (d) =>
+                                                            d.getFullYear() ===
+                                                                day.getFullYear() &&
+                                                            d.getMonth() ===
+                                                                day.getMonth() &&
+                                                            d.getDate() ===
+                                                                day.getDate()
+                                                    );
                                                 if (alreadySelected) {
-                                                    setTempSelectedDates(tempSelectedDates.filter(
-                                                        d => !(d.getFullYear() === day.getFullYear() &&
-                                                            d.getMonth() === day.getMonth() &&
-                                                            d.getDate() === day.getDate())
-                                                    ));
+                                                    setTempSelectedDates(
+                                                        tempSelectedDates.filter(
+                                                            (d) =>
+                                                                !(
+                                                                    d.getFullYear() ===
+                                                                        day.getFullYear() &&
+                                                                    d.getMonth() ===
+                                                                        day.getMonth() &&
+                                                                    d.getDate() ===
+                                                                        day.getDate()
+                                                                )
+                                                        )
+                                                    );
                                                 } else {
-                                                    setTempSelectedDates([...tempSelectedDates, day]);
+                                                    setTempSelectedDates([
+                                                        ...tempSelectedDates,
+                                                        day,
+                                                    ]);
                                                 }
                                             }}
                                             disabled={!isAvailable}
                                         >
-                                            <View className={`w-[40px] h-[40px] rounded-full flex items-center justify-center ${isSelected ? 'bg-[#8889BD]' : ''}`}> 
-                                                <Text className={`font-semibold text-[16px] ${isSelected ? 'text-white' : isAvailable ? (isWeekend ? 'text-red-500' : 'text-black') : 'text-gray-300'}`}>
+                                            <View
+                                                className={`w-[40px] h-[40px] rounded-full flex items-center justify-center ${
+                                                    isSelected
+                                                        ? "bg-[#8889BD]"
+                                                        : ""
+                                                }`}
+                                            >
+                                                <Text
+                                                    className={`font-semibold text-[16px] ${
+                                                        isSelected
+                                                            ? "text-white"
+                                                            : isAvailable
+                                                            ? isWeekend
+                                                                ? "text-red-500"
+                                                                : "text-black"
+                                                            : "text-gray-300"
+                                                    }`}
+                                                >
                                                     {day.getDate()}
                                                 </Text>
                                             </View>
-                                            {isToday && isAvailable && <View className="w-[6px] h-[6px] bg-[#5F60A2] rounded-full" />}
+                                            {isToday && isAvailable && (
+                                                <View className="w-[6px] h-[6px] bg-[#5F60A2] rounded-full" />
+                                            )}
                                         </Pressable>
                                     );
                                 })}
@@ -818,16 +718,20 @@ export default function HomeScreen() {
                     {/* 하단 버튼 */}
                     <View className="flex-row items-center gap-[10px] w-[362px] mx-auto mt-6">
                         <Pressable
-                            className="w-[85px] h-[45px] flex-row justify-center items-center border border-[#E0E0E0] rounded-[7px]"
+                            className="w-[85px] h-[45px] flex-row justify-center items-center border border-border rounded-[7px]"
                             onPress={closeCalendar}
                         >
-                            <Text className="font-bold text-[14px] text-black">닫기</Text>
+                            <Text className="font-bold text-[14px] text-black">
+                                닫기
+                            </Text>
                         </Pressable>
                         <Pressable
                             className="flex-1 h-[45px] flex-row justify-center items-center bg-[#8889BD] rounded-[7px]"
                             onPress={applyCalendar}
                         >
-                            <Text className="font-bold text-[14px] text-white">결과보기</Text>
+                            <Text className="font-bold text-[14px] text-white">
+                                결과보기
+                            </Text>
                         </Pressable>
                     </View>
                 </View>

@@ -1,35 +1,70 @@
 {
-  "expo": {
-    "name": "Moment",
-    "slug": "moment",
-    "scheme": "moment",
-    "version": "1.0.0",
-    "orientation": "portrait",
-    "icon": "./assets/icon.png",
-    "userInterfaceStyle": "automatic",
-    "newArchEnabled": true,
-    "splash": {
-      "image": "./assets/splash-icon.png",
-      "resizeMode": "contain",
-      "backgroundColor": "#ffffff"
-    },
-    "ios": {
-      "supportsTablet": true
-    },
-    "android": {
-      "adaptiveIcon": {
-        "foregroundImage": "./assets/adaptive-icon.png",
-        "backgroundColor": "#ffffff"
-      },
-      "package": "com.moment",
-      "edgeToEdgeEnabled": true
-    },
-    "web": {
-      "favicon": "./assets/favicon.png"
-    },
-    "plugins": [
-      "expo-router",
-      "expo-web-browser"
-    ]
-  }
+    "expo": {
+        "name": "Moment",
+        "slug": "moment",
+        "scheme": "moment",
+        "version": "1.0.0",
+        "orientation": "portrait",
+        "icon": "./assets/icon.png",
+        "userInterfaceStyle": "automatic",
+        "newArchEnabled": true,
+        "splash": {
+            "image": "./assets/splash-icon.png",
+            "resizeMode": "contain",
+            "backgroundColor": "#ffffff"
+        },
+        "ios": {
+            "supportsTablet": true
+        },
+        "android": {
+            "adaptiveIcon": {
+                "foregroundImage": "./assets/adaptive-icon.png",
+                "backgroundColor": "#ffffff"
+            },
+            "package": "com.moment",
+            "edgeToEdgeEnabled": true
+        },
+        "web": {
+            "favicon": "./assets/favicon.png"
+        },
+        "plugins": ["expo-router", "expo-web-browser"],
+        "fonts": [
+            {
+                "asset": "./assets/fonts/Pretendard/Pretendard-Thin.ttf",
+                "family": "Pretendard-Thin"
+            },
+            {
+                "asset": "./assets/fonts/Pretendard/Pretendard-ExtraLight.ttf",
+                "family": "Pretendard-ExtraLight"
+            },
+            {
+                "asset": "./assets/fonts/Pretendard/Pretendard-Light.ttf",
+                "family": "Pretendard-Light"
+            },
+            {
+                "asset": "./assets/fonts/Pretendard/Pretendard-Regular.ttf",
+                "family": "Pretendard-Regular"
+            },
+            {
+                "asset": "./assets/fonts/Pretendard/Pretendard-Medium.ttf",
+                "family": "Pretendard-Medium"
+            },
+            {
+                "asset": "./assets/fonts/Pretendard/Pretendard-SemiBold.ttf",
+                "family": "Pretendard-SemiBold"
+            },
+            {
+                "asset": "./assets/fonts/Pretendard/Pretendard-Bold.ttf",
+                "family": "Pretendard-Bold"
+            },
+            {
+                "asset": "./assets/fonts/Pretendard/Pretendard-ExtraBold.ttf",
+                "family": "Pretendard-ExtraBold"
+            },
+            {
+                "asset": "./assets/fonts/Pretendard/Pretendard-Black.ttf",
+                "family": "Pretendard-Black"
+            }
+        ]
+    }
 }
